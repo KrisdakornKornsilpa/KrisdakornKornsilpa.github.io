@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE Chatbot Admin Panel</title>
+    <link id="favicon" rel="icon" href="https://cdn-icons-png.flaticon.com/128/9977/9977388.png">
+    <link id="apple-touch-icon" rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/128/9977/9977388.png">
+    <meta name="description" content="LINE Chatbot Admin" />
+    <meta name="author" content="SuperHOF HofKrisda" />
+    <meta property="og:title" content="LINE Chatbot Admin" />
+    <meta property="og:description" content="LINE Chatbot Admin-SuperHOF HofKrisda Thailand" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://superhof.com" />
+    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/128/9977/9977388.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap');
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .json-editor {
+            font-family: 'Courier New', monospace;
+        }
+
+
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+
+        .toast-enter {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        .toast-enter-active {
+            transform: translateY(0);
+            opacity: 1;
+            transition: all 0.3s ease-out;
+        }
+
+        .toast-exit {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-exit-active {
+            transform: translateY(100%);
+            opacity: 0;
+            transition: all 0.3s ease-in;
+        }
+
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+
+
+    <div id="app" class="min-h-screen"></div>
+
+
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[60] flex flex-col gap-2"></div>
+
+
+    <div id="modal-overlay"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end md:items-center z-50 hidden fade-in p-0 md:p-4">
+        <div
+            class="bg-white rounded-t-2xl md:rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col transform transition-transform duration-300">
+            <div
+                class="flex justify-between items-center p-5 border-b border-gray-100 bg-white rounded-t-2xl md:rounded-t-xl sticky top-0 z-10">
+                <h2 id="modal-title" class="text-xl font-semibold text-gray-800">Title</h2>
+                <button onclick="closeModal()"
+                    class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div id="modal-content" class="p-6 overflow-y-auto custom-scrollbar">
+                <!-- Form Content Will Be Injected Here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const LIFF_ID = "2008927386-gbKZX9GR";
+        const SUPABASE_URL = "https://vdtumgsgfzzftpbqwrnp.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkdHVtZ3NnZnp6ZnRwYnF3cm5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxODIzNTQsImV4cCI6MjA4MDc1ODM1NH0.8CcadymvPC9nFE-SGJ3EJnCwmb5P5La1OJVLH-PIBnc";
+
+
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentUserProfile = null;
+        let currentView = 'keywords'; 
+        let isSidebarOpen = false;
+
+
+        let searchQuery = "";
+        let searchTimeout = null;
+        let currentPage = 1;
+        const ITEMS_PER_PAGE = 50;
+
+
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        async function initApp() {
+            renderLoading('กำลังยืนยันตัวตนผ่าน LINE...');
+
+            try {
+                await liff.init({ liffId: LIFF_ID, withLoginOnExternalBrowser: true });
+                await liff.ready;
+                if (!liff.isLoggedIn()) {
+                    liff.login({ redirectUri: window.location.href });
+                    return;
+                }
+
+                const profile = await liff.getProfile();
+                currentUserProfile = profile;
+
+                renderLoading('กำลังตรวจสอบสิทธิ์ Admin...');
+
+                const { data: userProfile, error } = await supabaseClient
+                    .from('user_profiles')
+                    .select('role')
+                    .eq('userId', profile.userId)
+                    .maybeSingle();
+
+                if (error) {
+                    console.error("Database Auth Error:", error);
+                    renderAccessDenied(profile);
+                    return;
+                }
+
+                if (userProfile && userProfile.role === 'admin') {
+                    renderMainLayout();
+                    loadView('keywords');
+                } else {
+                    renderAccessDenied(profile);
+                }
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('app').innerHTML = `
+                    <div class="min-h-screen flex items-center justify-center bg-red-50 p-4 text-red-800 text-center">
+                        <div>
+                            <h2 class="font-bold text-xl mb-2">เกิดข้อผิดพลาดในการเชื่อมต่อ</h2>
+                            <p class="mb-4">${err.message}</p>
+                            <button onclick="window.location.reload()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow">ลองใหม่อีกครั้ง</button>
+                        </div>
+                    </div>`;
+            }
+        }
+
+
+
+        function renderLoading(message = 'กำลังโหลด...') {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class="min-h-screen flex flex-col items-center justify-center bg-white">
+                    <div class="animate-spin text-blue-600 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                    </div>
+                    <p class="text-gray-500 font-medium animate-pulse">${message}</p>
+                </div>
+            `;
+        }
+
+        function renderAccessDenied(profile) {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+                    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-gray-100">
+                        <div class="mx-auto bg-red-100 w-20 h-20 rounded-full flex items-center justify-center mb-6">
+                            <i data-lucide="shield-alert" class="text-red-600 w-10 h-10"></i>
+                        </div>
+                        <h1 class="text-2xl font-bold text-gray-800 mb-2">ไม่มีสิทธิ์เข้าถึง</h1>
+                        <p class="text-gray-500 mb-6">บัญชีนี้ไม่มีสิทธิ์ Admin ในระบบ</p>
+                        
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 text-left flex items-center gap-3">
+                            <img src="${profile.pictureUrl}" class="w-12 h-12 rounded-full border-2 border-white shadow-sm" alt="Profile" />
+                            <div class="overflow-hidden">
+                                <div class="font-bold text-gray-900 truncate">${profile.displayName}</div>
+                                <div class="text-xs text-gray-500 truncate font-mono">${profile.userId}</div>
+                            </div>
+                        </div>
+                        <button onclick="window.location.reload()" class="w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-black transition font-medium">
+                            ลองใหม่อีกครั้ง
+                        </button>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function renderMainLayout() {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <!-- Mobile Header -->
+                <div class="md:hidden bg-white shadow-sm h-16 flex items-center justify-between px-4 sticky top-0 z-30">
+                    <div class="flex items-center gap-2 text-blue-700 font-bold text-lg">
+                        <i data-lucide="bot" class="w-6 h-6"></i> BOT ADMIN
+                    </div>
+                    <button onclick="toggleSidebar()" class="p-2 text-gray-600 rounded-lg hover:bg-gray-100">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <!-- Sidebar Overlay -->
+                <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden transition-opacity"></div>
+
+                <!-- Sidebar -->
+                <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-white border-r border-gray-200 transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50 flex flex-col shadow-lg md:shadow-none">
+                    <div class="h-20 flex items-center px-8 border-b border-gray-100">
+                        <div class="bg-blue-600 p-2 rounded-lg text-white mr-3 shadow-sm">
+                            <i data-lucide="bot" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-bold text-xl text-gray-800 tracking-tight">BOT ADMIN</h1>
+                            <p class="text-xs text-gray-400">Control Panel</p>
+                        </div>
+                    </div>
+
+                    <div class="p-6 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <img src="${currentUserProfile.pictureUrl}" class="w-10 h-10 rounded-full border-2 border-white shadow-md" alt="" />
+                            <div class="overflow-hidden">
+                                <p class="text-sm font-semibold text-gray-800 truncate">${currentUserProfile.displayName}</p>
+                                <p class="text-xs text-green-600 flex items-center gap-1 font-medium"><i data-lucide="shield-check" class="w-3 h-3"></i> Admin Verified</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                        <button onclick="loadView('keywords');" id="nav-keywords" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 group">
+                            <i data-lucide="message-square" class="w-5 h-5 group-hover:text-blue-600 transition-colors"></i> จัดการ Keyword
+                        </button>
+                        <button onclick="loadView('users');" id="nav-users" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 group">
+                            <i data-lucide="users" class="w-5 h-5 group-hover:text-blue-600 transition-colors"></i> ผู้ใช้งาน (Users)
+                        </button>
+                        <button onclick="loadView('permissions');" id="nav-permissions" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 group">
+                            <i data-lucide="key" class="w-5 h-5 group-hover:text-blue-600 transition-colors"></i> จัดการสิทธิ์ VIP
+                        </button>
+                    </nav>
+
+                    <div class="p-4 border-t border-gray-100">
+                        <button onclick="liff.logout(); window.location.reload();" class="w-full flex items-center justify-center gap-2 px-4 py-3 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition font-medium">
+                            <i data-lucide="log-out" class="w-5 h-5"></i> ออกจากระบบ
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Content Area -->
+                <main class="md:pl-72 w-full min-h-screen transition-all">
+                    <div class="max-w-7xl mx-auto p-4 md:p-8 pb-20 md:pb-8" id="content-area">
+                        <!-- Dynamic Content loads here -->
+                    </div>
+                </main>
+            `;
+            lucide.createIcons();
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            isSidebarOpen = !isSidebarOpen;
+
+            if (isSidebarOpen) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+
+
+        async function loadView(viewName) {
+            currentView = viewName;
+            searchQuery = "";
+            currentPage = 1;
+            if (window.innerWidth < 768) toggleSidebar();
+
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('bg-blue-50', 'text-blue-700', 'font-semibold');
+                btn.classList.add('text-gray-600');
+            });
+            const activeBtn = document.getElementById(`nav-${viewName}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-blue-50', 'text-blue-700', 'font-semibold');
+                activeBtn.classList.remove('text-gray-600');
+            }
+
+            const content = document.getElementById('content-area');
+            content.innerHTML = '<div class="flex justify-center py-20"><div class="animate-spin text-blue-600"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></div></div>';
+
+            if (viewName === 'keywords') await renderKeywordsTable();
+            else if (viewName === 'users') await renderUsersTable();
+            else if (viewName === 'permissions') await renderPermissionsTable();
+        }
+
+        function handleSearch(val) {
+            searchQuery = val.trim();
+            currentPage = 1;
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (currentView === 'keywords') renderKeywordsTable();
+                else if (currentView === 'users') renderUsersTable();
+                else if (currentView === 'permissions') renderPermissionsTable();
+            }, 500);
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            if (currentPage < 1) currentPage = 1;
+
+            if (currentView === 'keywords') renderKeywordsTable();
+            else if (currentView === 'users') renderUsersTable();
+            else if (currentView === 'permissions') renderPermissionsTable();
+        }
+
+
+
+        async function renderKeywordsTable() {
+            const from = (currentPage - 1) * ITEMS_PER_PAGE;
+            const to = from + ITEMS_PER_PAGE - 1;
+
+            let query = supabaseClient.from('keywords').select('*', { count: 'exact' }).order('id', { ascending: false }).range(from, to);
+
+            if (searchQuery) {
+                query = query.or(`keyword.ilike.%${searchQuery}%,reply_postback.ilike.%${searchQuery}%`);
+            }
+
+            const { data, error, count } = await query;
+            if (error) { showToast(error.message, 'error'); return; }
+
+            const totalPages = Math.ceil(count / ITEMS_PER_PAGE);
+            const hasPrev = currentPage > 1;
+            const hasNext = currentPage < totalPages;
+
+            let html = `
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                            <div class="bg-blue-100 p-2 rounded-lg text-blue-600"><i data-lucide="message-square" class="w-6 h-6"></i></div>
+                            จัดการ Keyword
+                        </h1>
+                        <p class="text-sm text-gray-500 mt-1">กำหนดคำตอบอัตโนมัติสำหรับบอท</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                            <input type="text" placeholder="ค้นหา Keyword..." oninput="handleSearch(this.value)" value="${searchQuery}"
+                                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 w-full sm:w-64 bg-white" />
+                        </div>
+                        <button onclick="openKeywordModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg flex items-center justify-center gap-2 transition shadow-sm font-medium whitespace-nowrap">
+                            <i data-lucide="plus" class="w-5 h-5"></i> เพิ่มใหม่
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[800px]">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-1/4">Trigger</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Duration</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">VIP</th>
+                                    <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+            `;
+
+            if (!data || data.length === 0) {
+                html += `<tr><td colSpan="5" class="text-center py-12 text-gray-400">ไม่พบข้อมูล</td></tr>`;
+            } else {
+                data.forEach(kw => {
+                    const itemStr = encodeURIComponent(JSON.stringify(kw));
+
+                    let trigger = '';
+                    if (kw.keyword) trigger += `<div class="flex items-center gap-2 mb-1"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-mono border">Text</span> <span class="font-medium text-gray-900 truncate max-w-[180px]">${escapeHtml(kw.keyword)}</span></div>`;
+                    if (kw.reply_postback) trigger += `<div class="flex items-center gap-2"><span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded text-xs font-mono border border-indigo-100">PB</span> <span class="font-mono text-xs text-gray-500 truncate max-w-[180px]">${escapeHtml(kw.reply_postback)}</span></div>`;
+
+                    let typeBadge = '';
+                    if (kw.reply_text) typeBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i data-lucide="type" class="w-3 h-3"></i> Text</span>`;
+                    else if (kw.reply_image) typeBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><i data-lucide="image" class="w-3 h-3"></i> Image</span>`;
+                    else if (kw.reply_flex) typeBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"><i data-lucide="code" class="w-3 h-3"></i> Flex</span>`;
+                    else if (kw.reply_template) typeBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800"><i data-lucide="layout-template" class="w-3 h-3"></i> Template</span>`;
+                    else if (kw.reply_prompt) typeBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><i data-lucide="sparkles" class="w-3 h-3"></i> AI</span>`;
+
+                    const timeInfo = (kw.startdatetime || kw.enddatetime)
+                        ? `<div class="text-xs text-gray-500 flex flex-col gap-1">
+                             ${kw.startdatetime ? `<div><span class="text-green-600 font-medium">Start:</span> ${kw.startdatetime}</div>` : ''}
+                             ${kw.enddatetime ? `<div><span class="text-red-600 font-medium">End:</span> ${kw.enddatetime}</div>` : ''}
+                           </div>`
+                        : '<span class="text-xs text-gray-400">-</span>';
+
+                    html += `
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 align-top">${trigger}</td>
+                            <td class="px-6 py-4 align-top">${typeBadge}</td>
+                            <td class="px-6 py-4 align-top">${timeInfo}</td>
+                            <td class="px-6 py-4 align-top">${kw.require_vip ? '<i data-lucide="lock" class="text-amber-500 w-4 h-4"></i>' : '<span class="text-gray-300">-</span>'}</td>
+                            <td class="px-6 py-4 align-top text-right">
+                                <div class="flex justify-end gap-2">
+                                    <button onclick="openKeywordModal('${itemStr}')" class="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                    <button onclick="deleteKeyword(${kw.id})" class="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            html += `</tbody></table>
+            
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="text-sm text-gray-500">
+                    แสดง ${data.length > 0 ? from + 1 : 0} ถึง ${Math.min(to + 1, count)} จาก ${count} รายการ
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="changePage(-1)" ${!hasPrev ? 'disabled' : ''} class="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="chevron-left" class="w-4 h-4 inline"></i> ก่อนหน้า
+                    </button>
+                    <span class="px-4 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-md flex items-center">หน้า ${currentPage} / ${totalPages || 1}</span>
+                    <button onclick="changePage(1)" ${!hasNext ? 'disabled' : ''} class="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        ถัดไป <i data-lucide="chevron-right" class="w-4 h-4 inline"></i>
+                    </button>
+                </div>
+            </div>
+            </div></div>`;
+            document.getElementById('content-area').innerHTML = html;
+            lucide.createIcons();
+        }
+
+        async function deleteKeyword(id) {
+            if (!confirm('ยืนยันการลบข้อมูลนี้หรือไม่?')) return;
+            const { error } = await supabaseClient.from('keywords').delete().eq('id', id);
+            if (error) showToast(error.message, 'error');
+            else {
+                showToast('ลบข้อมูลเรียบร้อย');
+                renderKeywordsTable();
+            }
+        }
+
+
+
+        async function renderUsersTable() {
+            const from = (currentPage - 1) * ITEMS_PER_PAGE;
+            const to = from + ITEMS_PER_PAGE - 1;
+
+            let query = supabaseClient.from('user_profiles').select('*', { count: 'exact' }).order('updated_at', { ascending: false }).range(from, to);
+
+            if (searchQuery) {
+                query = query.or(`displayName.ilike.%${searchQuery}%,userId.ilike.%${searchQuery}%`);
+            }
+
+            const { data, error, count } = await query;
+            if (error) { showToast(error.message, 'error'); return; }
+
+            const totalPages = Math.ceil(count / ITEMS_PER_PAGE);
+            const hasPrev = currentPage > 1;
+            const hasNext = currentPage < totalPages;
+
+            let html = `
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                            <div class="bg-indigo-100 p-2 rounded-lg text-indigo-600"><i data-lucide="users" class="w-6 h-6"></i></div>
+                            ผู้ใช้งาน (Users)
+                        </h1>
+                        <p class="text-sm text-gray-500 mt-1">จัดการสถานะและสิทธิ์การใช้งานของสมาชิก</p>
+                    </div>
+                    <div class="relative w-full md:w-auto">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                        <input type="text" placeholder="ค้นหาชื่อ หรือ User ID..." oninput="handleSearch(this.value)" value="${searchQuery}"
+                            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 w-full md:w-72 bg-white" />
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[800px]">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Profile</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Info</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Active</th>
+                                    <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Edit</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+            `;
+
+            if (!data || data.length === 0) {
+                html += `<tr><td colSpan="6" class="text-center py-12 text-gray-400">ไม่พบข้อมูล</td></tr>`;
+            } else {
+                data.forEach(u => {
+                    const userStr = encodeURIComponent(JSON.stringify(u));
+                    const thaiDate = formatThaiDateTime(u.updated_at);
+                    const statusColor = u.status === 'follow' ? 'bg-green-100 text-green-700' : (u.status === 'block' ? 'bg-gray-100 text-gray-600' : 'bg-red-100 text-red-600');
+                    const roleBadge = u.role === 'admin'
+                        ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700 border border-purple-200"><i data-lucide="crown" class="w-3 h-3"></i> ADMIN</span>`
+                        : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">User</span>`;
+
+                    html += `
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <img src="${u.pictureUrl || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full border border-gray-200 shadow-sm object-cover" />
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="font-medium text-gray-900 mb-0.5">${escapeHtml(u.displayName)}</div>
+                                <div class="flex items-center gap-1 text-xs text-gray-400 group cursor-pointer" onclick="copyToClipboard('${u.userId}')" title="Copy ID">
+                                    <span class="font-mono truncate max-w-[120px]">${u.userId}</span>
+                                    <i data-lucide="copy" class="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">${roleBadge}</td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor} capitalize">${u.status}</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">${thaiDate}</td>
+                            <td class="px-6 py-4 text-right">
+                                <button onclick="openUserModal('${userStr}')" class="p-2 text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            html += `</tbody></table>
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="text-sm text-gray-500">
+                    แสดง ${data.length > 0 ? from + 1 : 0} ถึง ${Math.min(to + 1, count)} จาก ${count} รายการ
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="changePage(-1)" ${!hasPrev ? 'disabled' : ''} class="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="chevron-left" class="w-4 h-4 inline"></i> ก่อนหน้า
+                    </button>
+                    <span class="px-4 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-md flex items-center">หน้า ${currentPage} / ${totalPages || 1}</span>
+                    <button onclick="changePage(1)" ${!hasNext ? 'disabled' : ''} class="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        ถัดไป <i data-lucide="chevron-right" class="w-4 h-4 inline"></i>
+                    </button>
+                </div>
+            </div>
+            </div></div>`;
+            document.getElementById('content-area').innerHTML = html;
+            lucide.createIcons();
+        }
+
+
+
+        async function renderPermissionsTable() {
+            const from = (currentPage - 1) * ITEMS_PER_PAGE;
+            const to = from + ITEMS_PER_PAGE - 1;
+
+            let query = supabaseClient.from('keyword_permissions').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(from, to);
+
+            if (searchQuery) {
+                query = query.or(`keyword.ilike.%${searchQuery}%,userId.ilike.%${searchQuery}%`);
+            }
+
+            const { data, error, count } = await query;
+            if (error) { showToast(error.message, 'error'); return; }
+
+            const totalPages = Math.ceil(count / ITEMS_PER_PAGE);
+            const hasPrev = currentPage > 1;
+            const hasNext = currentPage < totalPages;
+
+            let html = `
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                            <div class="bg-amber-100 p-2 rounded-lg text-amber-600"><i data-lucide="key" class="w-6 h-6"></i></div>
+                            จัดการสิทธิ์ VIP
+                        </h1>
+                        <p class="text-sm text-gray-500 mt-1">กำหนดว่า User คนไหน ใช้ Keyword ลับ (VIP) คำไหนได้บ้าง</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                            <input type="text" placeholder="ค้นหา Keyword หรือ UserID..." oninput="handleSearch(this.value)" value="${searchQuery}"
+                                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 w-full sm:w-64 bg-white" />
+                        </div>
+                        <button onclick="openPermissionModal()" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-lg flex items-center justify-center gap-2 transition shadow-sm font-medium whitespace-nowrap">
+                            <i data-lucide="plus" class="w-5 h-5"></i> เพิ่มสิทธิ์
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[600px]">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">User ID</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Target Keyword</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Access</th>
+                                    <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Remove</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+            `;
+
+            if (!data || data.length === 0) {
+                html += `<tr><td colSpan="4" class="text-center py-12 text-gray-400">ไม่พบข้อมูลสิทธิ์</td></tr>`;
+            } else {
+                data.forEach(perm => {
+                    html += `
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2 font-mono text-sm text-gray-600">
+                                    <span class="truncate max-w-[200px]">${escapeHtml(perm.userId)}</span>
+                                    <i data-lucide="copy" class="w-3 h-3 cursor-pointer hover:text-blue-500" onclick="copyToClipboard('${perm.userId}')"></i>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200 font-medium">${escapeHtml(perm.keyword)}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                ${perm.vip ? '<span class="text-amber-600 bg-amber-50 px-2 py-1 rounded text-xs font-bold border border-amber-100">VIP ALLOWED</span>' : '<span class="text-gray-400">Normal</span>'}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <button onclick="deletePermission(${perm.id})" class="p-2 text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            html += `</tbody></table>
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="text-sm text-gray-500">
+                    แสดง ${data.length > 0 ? from + 1 : 0} ถึง ${Math.min(to + 1, count)} จาก ${count} รายการ
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="changePage(-1)" ${!hasPrev ? 'disabled' : ''} class="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="chevron-left" class="w-4 h-4 inline"></i> ก่อนหน้า
+                    </button>
+                    <span class="px-4 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-md flex items-center">หน้า ${currentPage} / ${totalPages || 1}</span>
+                    <button onclick="changePage(1)" ${!hasNext ? 'disabled' : ''} class="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        ถัดไป <i data-lucide="chevron-right" class="w-4 h-4 inline"></i>
+                    </button>
+                </div>
+            </div>
+            </div></div>`;
+            document.getElementById('content-area').innerHTML = html;
+            lucide.createIcons();
+        }
+
+        async function deletePermission(id) {
+            if (!confirm('ต้องการลบสิทธิ์นี้ใช่หรือไม่? User จะไม่สามารถใช้ Keyword VIP นี้ได้อีก')) return;
+            const { error } = await supabaseClient.from('keyword_permissions').delete().eq('id', id);
+            if (error) showToast(error.message, 'error');
+            else { showToast('ลบสิทธิ์เรียบร้อย'); renderPermissionsTable(); }
+        }
+
+
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.add('hidden');
+        }
+
+
+        function openKeywordModal(itemStr = null) {
+            editingKeywordId = null;
+            let data = { keyword: '', reply_postback: '', replyType: 'text', content: '', startdatetime: '', enddatetime: '', require_vip: false, reply_richmenu: '' };
+            let title = 'เพิ่ม Keyword ใหม่';
+
+            if (itemStr) {
+                const item = JSON.parse(decodeURIComponent(itemStr));
+                editingKeywordId = item.id;
+                title = 'แก้ไข Keyword / Trigger';
+                data = { ...item };
+
+                if (item.reply_image) data.replyType = 'image';
+                else if (item.reply_flex) data.replyType = 'flex';
+                else if (item.reply_template) data.replyType = 'template';
+                else if (item.reply_prompt) data.replyType = 'prompt';
+                else data.replyType = 'text';
+
+                data.content = item[`reply_${data.replyType}`] || '';
+            }
+
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-content').innerHTML = `
+                <form id="keywordForm" class="space-y-5">
+                    <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <h3 class="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">1. เงื่อนไขการทำงาน (Trigger)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Keyword (ข้อความ)</label>
+                                <input type="text" name="keyword" value="${escapeHtml(data.keyword || '')}" class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="เช่น โปรโมชั่น" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Postback Data (ปุ่มกด)</label>
+                                <input type="text" name="reply_postback" value="${escapeHtml(data.reply_postback || '')}" class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="action=buy&id=1" />
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">* ใส่เพียงอย่างใดอย่างหนึ่ง หรือทั้งคู่ก็ได้</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">2. รูปแบบการตอบกลับ (Response)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">ประเภท</label>
+                                <select id="replyType" name="replyType" onchange="updateContentPlaceholder(this.value)" class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-2 focus:ring-blue-500 bg-white">
+                                    <option value="text" ${data.replyType === 'text' ? 'selected' : ''}>ข้อความ (Text)</option>
+                                    <option value="image" ${data.replyType === 'image' ? 'selected' : ''}>รูปภาพ (Image URL)</option>
+                                    <option value="flex" ${data.replyType === 'flex' ? 'selected' : ''}>Flex Message (JSON)</option>
+                                    <option value="template" ${data.replyType === 'template' ? 'selected' : ''}>Template (JSON)</option>
+                                    <option value="prompt" ${data.replyType === 'prompt' ? 'selected' : ''}>AI Prompt (Gemini)</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end pb-3">
+                                <label class="flex items-center space-x-2 cursor-pointer select-none bg-amber-50 px-3 py-2 rounded-lg border border-amber-100 w-full hover:bg-amber-100 transition">
+                                    <input type="checkbox" name="require_vip" ${data.require_vip ? 'checked' : ''} class="rounded text-amber-500 focus:ring-amber-500 h-5 w-5" />
+                                    <span class="text-sm font-medium text-amber-700"><i data-lucide="lock" class="w-3 h-3 inline"></i> เฉพาะ VIP</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label id="contentLabel" class="block text-sm font-medium text-gray-700 mb-1">เนื้อหา</label>
+                            <textarea id="contentTextarea" name="content" rows="6" class="w-full rounded-lg border-gray-300 border p-3 focus:ring-2 focus:ring-blue-500 font-mono text-sm hidden">${escapeHtml(data.content)}</textarea>
+                            <input id="contentInput" type="text" name="content_input" value="${escapeHtml(data.content)}" class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-2 focus:ring-blue-500 hidden" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">วันเริ่ม (Start Date)</label>
+                            <input type="text" name="startdatetime" value="${escapeHtml(data.startdatetime || '')}" class="w-full rounded-lg border-gray-300 border p-2.5" placeholder="DD/MM/YYYY HH:mm" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">วันสิ้นสุด (End Date)</label>
+                            <input type="text" name="enddatetime" value="${escapeHtml(data.enddatetime || '')}" class="w-full rounded-lg border-gray-300 border p-2.5" placeholder="DD/MM/YYYY HH:mm" />
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rich Menu ID (Optional)</label>
+                        <input type="text" name="reply_richmenu" value="${escapeHtml(data.reply_richmenu || '')}" class="w-full rounded-lg border-gray-300 border p-2.5 text-sm font-mono text-gray-500" placeholder="richmenu-xxx..." />
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                        <button type="button" onclick="closeModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium">ยกเลิก</button>
+                        <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-lg shadow-blue-200 flex items-center gap-2 font-medium">
+                            <i data-lucide="save" class="w-4 h-4"></i> บันทึกข้อมูล
+                        </button>
+                    </div>
+                </form>
+            `;
+            updateContentPlaceholder(data.replyType);
+            document.getElementById('keywordForm').onsubmit = handleKeywordSubmit;
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+
+        function openUserModal(userStr) {
+            const user = JSON.parse(decodeURIComponent(userStr));
+            editingUserId = user.userId;
+
+            document.getElementById('modal-title').innerText = 'แก้ไขผู้ใช้งาน';
+            document.getElementById('modal-content').innerHTML = `
+                <form id="userForm" class="space-y-6">
+                    <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <img src="${user.pictureUrl || 'https://via.placeholder.com/80'}" class="w-16 h-16 rounded-full border-4 border-white shadow-sm" />
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-bold text-gray-800 text-lg truncate">${escapeHtml(user.displayName)}</h3>
+                            <div class="flex items-center gap-2 text-sm text-gray-500 font-mono mt-1 bg-white px-2 py-1 rounded border border-gray-200 w-fit">
+                                <span class="truncate max-w-[180px]">${user.userId}</span>
+                                <i data-lucide="copy" class="w-3 h-3 cursor-pointer hover:text-blue-600" onclick="copyToClipboard('${user.userId}')"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">บทบาท (Role)</label>
+                            <div class="relative">
+                                <select name="role" class="w-full appearance-none rounded-lg border border-gray-300 p-3 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                    <option value="user" ${!user.role || user.role === 'user' ? 'selected' : ''}>User (ผู้ใช้ทั่วไป)</option>
+                                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin (ผู้ดูแลระบบ)</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2 ml-1">Admin จะสามารถเข้าถึงหน้าจัดการนี้ได้</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">สถานะ (Status)</label>
+                            <div class="relative">
+                                <select name="status" class="w-full appearance-none rounded-lg border border-gray-300 p-3 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                    <option value="follow" ${user.status === 'follow' ? 'selected' : ''}>Active (ปกติ)</option>
+                                    <option value="block" ${user.status === 'block' ? 'selected' : ''}>Block (ระงับการใช้งาน)</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-6 border-t border-gray-100">
+                        <button type="button" onclick="closeModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium">ยกเลิก</button>
+                        <button type="submit" class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 flex items-center gap-2 font-medium">
+                            <i data-lucide="save" class="w-4 h-4"></i> อัปเดตสถานะ
+                        </button>
+                    </div>
+                </form>
+            `;
+            document.getElementById('userForm').onsubmit = handleUserSubmit;
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+
+        function openPermissionModal() {
+            document.getElementById('modal-title').innerText = 'เพิ่มสิทธิ์การใช้ Keyword (VIP)';
+            document.getElementById('modal-content').innerHTML = `
+                <form id="permForm" class="space-y-6">
+                    <div class="p-4 bg-amber-50 border border-amber-100 rounded-lg text-sm text-amber-800">
+                        <i data-lucide="info" class="w-4 h-4 inline mr-1"></i>
+                        ระบบนี้ใช้สำหรับจับคู่ <b>User ID</b> กับ <b>Keyword</b> ที่ตั้งค่าเป็น "เฉพาะ VIP" ไว้
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">User ID ของผู้ใช้</label>
+                        <input type="text" name="userId" required class="w-full rounded-lg border-gray-300 border p-3 focus:ring-2 focus:ring-amber-500 font-mono text-sm" placeholder="Uxxxxxxxx..." />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Keyword ที่อนุญาตให้ใช้</label>
+                        <input type="text" name="keyword" required class="w-full rounded-lg border-gray-300 border p-3 focus:ring-2 focus:ring-amber-500" placeholder="เช่น โปรลับVIP" />
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                        <button type="button" onclick="closeModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium">ยกเลิก</button>
+                        <button type="submit" class="px-5 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition shadow-lg shadow-amber-200 flex items-center gap-2 font-medium">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i> ให้สิทธิ์
+                        </button>
+                    </div>
+                </form>
+            `;
+            document.getElementById('permForm').onsubmit = handlePermissionSubmit;
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+
+
+        function updateContentPlaceholder(type) {
+            const label = document.getElementById('contentLabel');
+            const textarea = document.getElementById('contentTextarea');
+            const input = document.getElementById('contentInput');
+
+            textarea.classList.add('hidden'); input.classList.add('hidden');
+            textarea.removeAttribute('required'); input.removeAttribute('required');
+
+            if (type === 'text' || type === 'prompt') {
+                label.innerText = type === 'text' ? 'ข้อความตอบกลับ' : 'คำสั่ง Prompt (System Instruction)';
+                textarea.classList.remove('hidden'); textarea.setAttribute('required', 'true');
+            } else if (type === 'flex' || type === 'template') {
+                label.innerText = `JSON Code ของ ${type}`;
+                textarea.classList.remove('hidden'); textarea.setAttribute('required', 'true');
+                textarea.classList.add('json-editor');
+            } else {
+                label.innerText = 'URL ของรูปภาพ (https://...)';
+                input.classList.remove('hidden'); input.setAttribute('required', 'true');
+            }
+        }
+
+        async function handleKeywordSubmit(e) {
+            e.preventDefault();
+            const f = e.target;
+            const replyType = f.replyType.value;
+            let content = (replyType === 'image') ? f.content_input.value : f.content.value;
+
+            if (['flex', 'template'].includes(replyType)) {
+                try { JSON.parse(content); } catch (err) { showToast('JSON ไม่ถูกต้อง', 'error'); return; }
+            }
+
+            if (!f.keyword.value.trim() && !f.reply_postback.value.trim()) {
+                showToast('ต้องระบุ Keyword หรือ Postback อย่างน้อย 1 อย่าง', 'error'); return;
+            }
+
+            const payload = {
+                keyword: f.keyword.value.trim() || null,
+                reply_postback: f.reply_postback.value.trim() || null,
+                startdatetime: f.startdatetime.value || null,
+                enddatetime: f.enddatetime.value || null,
+                require_vip: f.require_vip.checked,
+                reply_richmenu: f.reply_richmenu.value || null,
+                reply_text: null, reply_image: null, reply_flex: null, reply_prompt: null, reply_template: null
+            };
+            payload[`reply_${replyType}`] = content;
+
+            let error;
+            if (editingKeywordId) {
+                const { error: err } = await supabaseClient.from('keywords').update(payload).eq('id', editingKeywordId);
+                error = err;
+            } else {
+                const { error: err } = await supabaseClient.from('keywords').insert([payload]);
+                error = err;
+            }
+
+            if (error) showToast(error.message, 'error');
+            else { showToast('บันทึกสำเร็จ'); closeModal(); renderKeywordsTable(); }
+        }
+
+        async function handleUserSubmit(e) {
+            e.preventDefault();
+            if (!editingUserId) return;
+            const f = e.target;
+            const { error } = await supabaseClient.from('user_profiles').update({ role: f.role.value, status: f.status.value }).eq('userId', editingUserId);
+            if (error) showToast(error.message, 'error');
+            else { showToast('อัปเดตผู้ใช้สำเร็จ'); closeModal(); renderUsersTable(); }
+        }
+
+        async function handlePermissionSubmit(e) {
+            e.preventDefault();
+            const f = e.target;
+            const { error } = await supabaseClient.from('keyword_permissions').insert([{
+                userId: f.userId.value.trim(),
+                keyword: f.keyword.value.trim(),
+                vip: true
+            }]);
+            if (error) showToast(error.message, 'error');
+            else { showToast('เพิ่มสิทธิ์ VIP สำเร็จ'); closeModal(); renderPermissionsTable(); }
+        }
+
+
+
+        function formatThaiDateTime(isoString) {
+            if (!isoString) return '-';
+            if (!isoString.endsWith('Z') && !isoString.includes('+')) isoString += 'Z'; // Fallback to UTC assumption
+            try {
+                const date = new Date(isoString);
+                return date.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } catch (e) { return isoString; }
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colorClass = type === 'error' ? 'bg-red-500' : 'bg-emerald-500';
+            toast.className = `${colorClass} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 toast-enter text-sm font-medium z-50`;
+            toast.innerHTML = `<i data-lucide="${type === 'error' ? 'alert-circle' : 'check-circle'}" class="w-5 h-5"></i> ${message}`;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            requestAnimationFrame(() => { toast.classList.add('toast-enter-active'); toast.classList.remove('toast-enter'); });
+            setTimeout(() => { toast.classList.add('toast-exit-active'); toast.addEventListener('transitionend', () => toast.remove()); }, 3000);
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            showToast('คัดลอกเรียบร้อย');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+
+</html>
