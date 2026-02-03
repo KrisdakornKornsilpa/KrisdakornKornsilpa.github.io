@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+  <meta property="og:title" content="Hofkrisda share content">
+  <meta property="og:image" content="https://image.makewebcdn.com/makeweb/0/pMrtkmxgt/gif_animation/garfield_w200.gif?v=202405291424">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style type="text/css"> 
+        body { 
+            font-family: 'line_seed_sans_th'; 
+        } 
+    </style>
+    <title>LIFF Dynamic link Keyword x Dropdown Sheet</title>
+</head>
+<body>
+<p> <p>
+<center> . . . . . กำลังโหลด . . . . .</center>
+<center>
+  <img src="https://image.makewebcdn.com/makeweb/0/pMrtkmxgt/gif_animation/lt47_2.gif?v=202405291424" alt="loading" height="120" />
+  <BR>กรุณารอสักครู่
+  </p></p></center>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    
+    <script>
+        $(document).ready(function () {
+            var liffId = "1655425003-TPe9y1TW"; //--ใส่ LiffID--
+            initializeLiff(liffId);
+           
+        })
+
+        function initializeLiff(liffId) {
+            liff
+                .init({
+                    liffId: liffId,
+                    withLoginOnExternalBrowser: true,
+                })
+                .then(() => {
+                    if (!liff.isInClient() && !liff.isLoggedIn()) {
+                        window.alert("กรุณาเข้าสู่ระบบบัญชี LINE ของคุณ");
+                        liff.login({ redirectUri: location.href });
+
+                    }
+                    liff.ready.then(() => {
+                      liff.getProfile()
+  .then((profile) => {
+    const name = profile.displayName;
+    const userId = profile.userId;
+    const params = (new URL(document.location)).searchParams;
+    const key = params.get("key");
+             
+    sendToGoogleSheet(userId, name, key)
+  })
+  .catch((err) => {
+    console.log("error", err);
+  });                   
+                       
+                    });
+                })
+                .catch((err) => {
+                    console.log('LIFF Initialization failed ', err);
+                });
+        }
+
+        function sendToGoogleSheet(userId, name,key) {
+      //  $('#loading-overlay').removeClass('hidden');
+        $.post('https://script.google.com/macros/s/AKfycbxeKrof3DhtbzZGW0OtISVUbl1vi2TzO8AZUiSeZ8KPEHymZ-3sqWD8IQASzjVTAOI/exec', {
+//-----เว็ปแอปจาก google sheet--------
+            userId: userId, 
+            name: name, 
+            key: key
+        })
+        .done(function(response) {
+         //   $('#loading-overlay').addClass('hidden');
+            var statusCode = response.statusCode;
+            console.log("Status code from response:", statusCode);
+                  if (statusCode === 200) {
+                var flexMessage = response.body;
+          //--sendMessages(flexMessage); ใช้ send หรือ share สลับกันที่บรรทัดนี้--
+                shareMessages(flexMessage);
+            } else {
+                Swal.fire("ไม่ถูกต้อง", "กรุณาลองใหม่อีกครั้ง", "error")
+                    .then(() => liff.closeWindow());
+            }
+        })
+        .fail(function(error) {
+            console.error("Error sending to Google Sheet:", error);
+            $('#loading-overlay').addClass('hidden');
+            Swal.fire("ผิดพลาด", "กรุณาทำรายการใหม่อีกครั้ง", "error")
+                .then(() => liff.closeWindow());
+        });
+    }
+    //   function sendMessages(messages) {
+    //     if (!liff.isInClient()) {
+    //        Swal.fire("ผิดพลาด", "โปรดใช้เฉพาะมือถือเท่านั้น", "error")
+    //         console.error("LIFF is not opened inside the LINE app.");
+    //         return;
+    //     }
+
+    //     liff.sendMessages(messages)
+    //         .then(() => {
+    //             Swal.fire({
+    //                 title: "🎉ส่งเรียบร้อย🎉",
+    //                 text: "ทำการส่ง Message เรียบร้อย",
+    //                 icon: "success",
+    //                 confirmButtonText: 'ตกลง'
+    //             }).then(() => {
+    //                 liff.closeWindow();
+    //             });
+    //         })
+    //         .catch(error => {
+    //             console.error("Failed to send message:", error);
+    //             Swal.fire("เกิดข้อผิดพลาด!", "โปรดลองใหม่อีกครั้ง", "error")
+    //                 .then(() => liff.closeWindow());
+    //         });
+    // }
+      
+      function shareMessages(messages) {
+        if (!liff.isInClient()) {
+           Swal.fire("ผิดพลาด", "โปรดใช้เฉพาะมือถือเท่านั้น", "error")
+            console.error("LIFF is not opened inside the LINE app.");
+            return;
+        }
+
+        liff.shareTargetPicker(messages).then(function (res) {
+    if (res) {
+        Swal.fire({
+                    title: "🎉แชร์เรียบร้อย🎉",
+                    text: "ทำการส่ง Message เรียบร้อย",
+                    icon: "success",
+                    confirmButtonText: 'ตกลง'
+                }).then(() => {
+                    liff.closeWindow();
+                });
+    } else {
+     
+      console.log("TargetPicker was closed!");
+    }
+  })
+  .catch(function (error) {
+    
+    console.log("something wrong happen");
+          Swal.fire("เกิดข้อผิดพลาด!", "โปรดลองใหม่อีกครั้ง", "error")
+                    .then(() => liff.closeWindow());
+  });
+           
+    }
+      
+
+    </script>
+</body>
+</html>
