@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SwiftRun Event</title>
+    <link id="favicon" rel="icon" href="https://cdn-icons-gif.flaticon.com/16358/16358416.gif">
+    <link id="apple-touch-icon" rel="apple-touch-icon" href="https://cdn-icons-gif.flaticon.com/16358/16358416.gif">
+    <meta name="description" content="SwiftRun Event" />
+     <meta name="author" content="SuperHOF HofKrisda" />
+    <meta property="og:title" content="SwiftRun Event" />
+    <meta property="og:description" content="SwiftRun Event-HofKrisda Thailand" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.hofkrisda.com" />
+    <meta property="og:image" content="https://cdn-icons-gif.flaticon.com/16358/16358416.gif" />
+    <link rel="icon" href="https://cdn-icons-gif.flaticon.com/16358/16358416.gif">
+    <meta name="description" content="SwiftRun Event" />
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'peach': '#e4be9e',
+                        'grape-gray': '#71697a',
+                        'cream': '#f2f6d0',
+                        'pale-green': '#d0e1d4',
+                        'beige': '#d9d2b6',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@7/fonts/LINESeedSansTH/LINESeedSansTH.css"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --cream: #f2f6d0;
+            --pale-green: #d0e1d4;
+            --beige: #d9d2b6;
+            --peach: #e4be9e;
+            --grape-gray: #71697a;
+        }
+
+        body {
+            font-family: 'LINE Seed Sans TH', 'Prompt', sans-serif;
+            background-color: var(--cream);
+            color: var(--grape-gray);
+            overflow-x: hidden;
+        }
+
+        .clay-card {
+            background: var(--beige);
+            border-radius: 20px;
+            box-shadow: 8px 8px 0px var(--grape-gray);
+            border: 2px solid var(--grape-gray);
+        }
+
+        .clay-btn {
+            background: var(--peach);
+            color: var(--grape-gray);
+            border: 2px solid var(--grape-gray);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0px var(--grape-gray);
+            font-weight: 800;
+        }
+
+        .ticket-3d {
+            background: #fff;
+            border-radius: 24px;
+            padding: 24px;
+            border: 3px solid var(--grape-gray);
+            box-shadow: 12px 12px 0px var(--peach);
+        }
+
+        #loading-overlay {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="max-w-md mx-auto min-h-screen bg-transparent relative pb-20 px-4">
+
+
+        <div id="loading-overlay"
+            class="fixed inset-0 z-50 bg-[#f2f6d0] flex flex-col items-center justify-center pointer-events-none opacity-0">
+            <img src="https://developers.line.biz/media/line-mini-app/LINE_spinner_light.svg" width="60" alt="Loading"
+                class="mb-4">
+            <p id="loading-text" class="text-[#71697a] font-black uppercase tracking-widest text-sm">SwiftRun</p>
+        </div>
+
+
+        <header class="py-6 flex justify-between items-center z-40">
+            <div class="flex items-center gap-3">
+                <div
+                    class="bg-peach border-2 border-grape-gray w-10 h-10 rounded-xl flex items-center justify-center text-grape-gray font-black text-xl shadow-[4px_4px_0px_#71697a]">
+                    <img src="https://cdn-icons-gif.flaticon.com/11324/11324214.gif" width="60" alt="Logo">
+                </div>
+                <h1 class="font-black text-2xl text-grape-gray uppercase tracking-tighter">SwiftRun</h1>
+            </div>
+            <div id="user-profile-mini" class="flex items-center gap-2 hidden">
+                <img id="user-img" src="https://cdn-icons-png.flaticon.com/128/2102/2102633.png"
+                    class="w-10 h-10 rounded-full border-2 border-grape-gray shadow-[2px_2px_0px_#71697a]">
+            </div>
+        </header>
+
+
+        <div id="view-pdpa" class="hidden py-8 fade-in flex flex-col justify-center">
+            <div class="clay-card p-8 mb-8 text-center bg-pale-green">
+                <div
+                    class="w-32 h-32 mx-auto mb-6 bg-cream border-4 border-grape-gray rounded-3xl flex items-center justify-center shadow-[6px_6px_0px_#71697a]">
+                    <!-- <i class="fas fa-running text-5xl text-grape-gray"></i> -->
+                    <img src="https://cdn-icons-gif.flaticon.com/16358/16358416.gif" width="60" alt="Logo">
+                </div>
+                <h2 class="text-3xl font-black text-grape-gray mb-3 uppercase tracking-tighter">ยินดีต้อนรับ</h2>
+                <p class="text-grape-gray/80 text-sm font-bold leading-relaxed">
+                    มาร่วมเป็นส่วนหนึ่งของ SwiftRun 🏃‍♂️ <br>
+                    เราจะดูแลข้อมูลส่วนบุคคลของคุณอย่างดีที่สุด
+                </p>
+            </div>
+
+            <div class="clay-card p-6 mb-8 bg-beige">
+                <h3 class="font-black text-sm mb-4 uppercase tracking-widest flex items-center gap-2">
+                    <i class="fas fa-shield-alt"></i> ข้อตกลงและเงื่อนไข
+                </h3>
+                <ul class="text-xs text-grape-gray font-bold space-y-3">
+                    <li class="flex gap-2"><span class="text-peach">●</span>
+                        ข้าพเจ้ายินยอมให้เก็บรวบรวมชื่อและรูปภาพโปรไฟล์ LINE</li>
+                    <li class="flex gap-2"><span class="text-peach">●</span>
+                        ข้อมูลจะถูกใช้งานเพื่อการันตีการลงทะเบียนงานวิ่ง</li>
+                    <li class="flex gap-2"><span class="text-peach">●</span> ท่านสามารถเลือกขอยกเลิกความยินยอมได้ภายหลัง
+                    </li>
+                </ul>
+            </div>
+
+            <button onclick="saveConsent()" class="clay-btn w-full py-4 text-xl">
+                ยอมรับและเริ่มต้นใช้งาน
+            </button>
+        </div>
+
+
+        <div id="view-events" class="hidden py-4 fade-in">
+            <h2 class="text-2xl font-black text-grape-gray mb-6 uppercase tracking-tighter flex items-center gap-2">
+                <i class="fas fa-bullhorn text-peach"></i> งานวิ่งเปิดรับสมัคร
+            </h2>
+            <div id="event-list-container" class="space-y-6">
+                <!-- Events via JS -->
+            </div>
+        </div>
+
+        <!-- NEW VIEW: MY EVENTS -->
+        <div id="view-my-events" class="hidden py-4 fade-in">
+            <h2 class="text-2xl font-black text-grape-gray mb-6 uppercase tracking-tighter flex items-center gap-2">
+                <i class="fas fa-medal text-peach"></i> งานวิ่งของฉัน
+            </h2>
+            <div id="my-events-container" class="space-y-4">
+                <!-- My registrations via JS -->
+            </div>
+        </div>
+
+
+        <div id="view-pending" class="hidden py-8 fade-in">
+            <button onclick="showMyEvents()"
+                class="mb-6 text-grape-gray/50 hover:text-grape-gray text-xs font-black uppercase flex items-center gap-2">
+                <i class="fas fa-chevron-left"></i> งานวิ่งของฉัน
+            </button>
+            <div class="clay-card p-8 text-center bg-peach">
+                <div
+                    class="w-24 h-24 bg-white border-4 border-grape-gray rounded-full mx-auto mb-6 flex items-center justify-center shadow-[4px_4px_0px_#71697a] animate-bounce">
+                    <i class="fas fa-hourglass-half text-4xl text-grape-gray"></i>
+                </div>
+                <h2 class="text-3xl font-black text-grape-gray mb-2 uppercase tracking-tighter">รอการอนุมัติ</h2>
+                <p class="text-grape-gray font-bold mb-6">แอดมินกำลังตรวจสอบข้อมูลและออก BIB ให้คุณอยู่นะ!</p>
+                <div class="bg-cream/50 p-4 rounded-xl border-2 border-dashed border-grape-gray/30">
+                    <p class="text-[10px] font-black text-grape-gray/60 uppercase tracking-widest mb-1">
+                        กิจกรรมที่คุณสมัคร</p>
+                    <p id="pending-event-name" class="font-black text-grape-gray">-</p>
+                    <p id="pending-event-dist" class="text-sm font-bold text-grape-gray/70">-</p>
+                </div>
+
+                <button onclick="main()"
+                    class="mt-6 text-grape-gray text-xs font-black uppercase tracking-widest hover:opacity-70 transition">
+                    <i class="fas fa-sync-alt mr-1"></i> ตรวจสอบอีกครั้ง
+                </button>
+            </div>
+        </div>
+
+
+        <div id="view-ticket" class="hidden py-4 fade-in">
+            <button onclick="showMyEvents()"
+                class="mb-6 text-grape-gray/50 hover:text-grape-gray text-xs font-black uppercase flex items-center gap-2">
+                <i class="fas fa-chevron-left"></i> งานวิ่งของฉัน
+            </button>
+            <div class="ticket-3d flex flex-col mb-4">
+                <div class="border-b-4 border-dashed border-grape-gray/20 pb-6 mb-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div
+                            class="bg-peach border-2 border-grape-gray px-3 py-1 rounded-lg text-xs font-black uppercase text-grape-gray shadow-[2px_2px_0px_#71697a]">
+                            Official Entry
+                        </div>
+                        <h2 class="text-xs font-black text-grape-gray/40 uppercase tracking-widest">SwiftRun 2026</h2>
+                    </div>
+                    <h3 id="ticket-event-name" class="text-2xl font-black text-grape-gray uppercase leading-none">Event
+                        Name</h3>
+                </div>
+
+                <div class="flex flex-col items-center mb-8">
+                    <div
+                        class="w-32 h-32 p-1 bg-white border-4 border-grape-gray rounded-3xl shadow-[6px_6px_0px_#71697a] mb-4">
+                        <img id="ticket-img" src="" class="w-full h-full rounded-2xl object-cover bg-cream">
+                    </div>
+                    <h2 id="ticket-name" class="text-2xl font-black text-grape-gray mb-1">Runner Name</h2>
+                    <p class="text-xs font-bold text-peach uppercase tracking-[0.2em]">Verified BIB Holder</p>
+                </div>
+
+                <div
+                    class="clay-card bg-pale-green p-4 mb-8 flex justify-between items-center shadow-[4px_4px_0px_#71697a]">
+                    <div class="flex-1 text-center border-r-2 border-grape-gray/10">
+                        <p class="text-[10px] font-black text-grape-gray/50 uppercase tracking-widest">BIB NO.</p>
+                        <p id="ticket-bib" class="text-3xl font-black text-grape-gray">A0000</p>
+                    </div>
+                    <div class="flex-1 text-center">
+                        <p class="text-[10px] font-black text-grape-gray/50 uppercase tracking-widest">DIST.</p>
+                        <p id="ticket-dist" class="text-3xl font-black text-grape-gray">10KM</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <button onclick="shareCard()"
+                        class="clay-btn clay-btn-secondary w-full py-4 text-sm flex items-center justify-center gap-2">
+                        <i class="fas fa-share-alt"></i> ชวนเพื่อนมาวิ่งด้วยกัน
+                    </button>
+                    <div id="checkin-action-area">
+                        <button onclick="handleScanQR()"
+                            class="clay-btn w-full py-4 text-sm flex items-center justify-center gap-2">
+                            <i class="fas fa-qrcode"></i> SCAN TO CHECK-IN
+                        </button>
+                    </div>
+                    <div id="checked-in-state" class="hidden">
+                        <div
+                            class="clay-card bg-pale-green p-4 flex items-center justify-center gap-3 border-green-600/20">
+                            <i class="fas fa-check-circle text-2xl text-green-600"></i>
+                            <div class="text-left">
+                                <p class="text-grape-gray font-black text-xs uppercase italic">Checked In Success</p>
+                                <p class="text-grape-gray/60 font-bold text-[10px]" id="ticket-checkin-time">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="text-center text-xs text-gray-400">Show this ticket at the check-in point</p>
+        </div>
+    </div>
+
+   
+    <nav id="bottom-nav"
+        class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-grape-gray/10 px-8 py-3 flex justify-around items-center z-50 transition-transform translate-y-full">
+        <button onclick="fetchAndShowEvents()" id="nav-home"
+            class="flex flex-col items-center gap-1 text-grape-gray/40 hover:text-peach transition-colors">
+            <i class="fas fa-home text-xl"></i>
+            <span class="text-[10px] font-black uppercase">Home</span>
+        </button>
+        <button onclick="showMyEvents()" id="nav-my"
+            class="flex flex-col items-center gap-1 text-grape-gray/40 hover:text-peach transition-colors">
+            <i class="fas fa-medal text-xl"></i>
+            <span class="text-[10px] font-black uppercase">My Runs</span>
+        </button>
+    </nav>
+
+
+    <script>
+        const LIFF_ID = '2009058519-ij6jmw7m';
+        const SUPABASE_URL = 'https://yabvzfiqkopxrgnpznbf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhYnZ6Zmlxa29weHJnbnB6bmJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDgwODIsImV4cCI6MjA4NDAyNDA4Mn0.jA3iPxvNIZNYrw8H5tk9Z0y5YxDvdAdnzJ65PL4AETw';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+        let currentUser = null;
+        let currentUserDB = null;
+        let allRegistrations = [];
+        let currentReg = null;
+
+        async function main() {
+            updateLoading('กำลังโหลดข้อมูล...', true);
+            try {
+                await liff.init({ liffId: LIFF_ID, withLoginOnExternalBrowser: true });
+                await liff.ready;
+                if (!liff.isLoggedIn()) {
+                    liff.login({ redirectUri: window.location.href });
+                    return;
+                }
+                const profile = await liff.getProfile();
+                currentUser = profile;
+                updateHeader(profile);
+
+                const { data: res, error } = await supabaseClient.functions.invoke('checkin-process', {
+                    body: { action: 'get_profile', lineUserId: profile.userId }
+                });
+
+                if (error) throw error;
+                const { data: runnerDB, registrations } = res;
+                currentUserDB = runnerDB;
+                allRegistrations = registrations || [];
+
+                updateLoading('', false);
+                if (!runnerDB) {
+                    switchView('pdpa');
+                } else {
+
+                    fetchAndShowEvents();
+                }
+            } catch (err) {
+                console.error(err);
+                updateLoading('', false);
+                Swal.fire('Error', 'ไม่สามารถเชื่อมต่อระบบได้', 'error');
+            }
+        }
+
+        function switchView(viewName) {
+            ['pdpa', 'events', 'my-events', 'pending', 'ticket'].forEach(v => {
+                document.getElementById('view-' + v).classList.add('hidden');
+            });
+            document.getElementById('view-' + viewName).classList.remove('hidden');
+
+
+            const nav = document.getElementById('bottom-nav');
+            if (viewName === 'pdpa') {
+                nav.classList.add('translate-y-full');
+            } else {
+                nav.classList.remove('translate-y-full');
+            }
+
+
+            document.getElementById('nav-home').classList.toggle('text-peach', viewName === 'events');
+            document.getElementById('nav-home').classList.toggle('text-grape-gray/40', viewName !== 'events');
+            document.getElementById('nav-my').classList.toggle('text-peach', viewName === 'my-events' || viewName === 'pending' || viewName === 'ticket');
+            document.getElementById('nav-my').classList.toggle('text-grape-gray/40', !(viewName === 'my-events' || viewName === 'pending' || viewName === 'ticket'));
+        }
+
+        function updateLoading(text, show) {
+            const el = document.getElementById('loading-overlay');
+            if (show) {
+                el.classList.remove('opacity-0', 'pointer-events-none');
+                document.getElementById('loading-text').innerText = text;
+            } else {
+                el.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        function updateHeader(profile) {
+            const mini = document.getElementById('user-profile-mini');
+            mini.classList.remove('hidden');
+            if (profile.pictureUrl) document.getElementById('user-img').src = profile.pictureUrl;
+        }
+
+        async function saveConsent() {
+            updateLoading('กำลังบันทึก...', true);
+            try {
+                const { data, error } = await supabaseClient.functions.invoke('checkin-process', {
+                    body: {
+                        action: 'upsert_profile',
+                        lineUserId: currentUser.userId,
+                        payload: { displayName: currentUser.displayName, pictureUrl: currentUser.pictureUrl }
+                    }
+                });
+                if (error) throw error;
+                fetchAndShowEvents();
+            } catch (err) {
+                updateLoading('', false);
+                Swal.fire('Error', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+            }
+        }
+
+        async function fetchAndShowEvents() {
+            switchView('events');
+            updateLoading('โหลดข้อมูลงานวิ่ง...', true);
+            const { data: res, error } = await supabaseClient.functions.invoke('checkin-process', {
+                body: { action: 'get_events' }
+            });
+            updateLoading('', false);
+            if (error) {
+                Swal.fire('Error', 'โหลดข้อมูลไม่สำเร็จ', 'error');
+                return;
+            }
+            const container = document.getElementById('event-list-container');
+            container.innerHTML = '';
+            if (!res || !res.events || res.events.length === 0) {
+                container.innerHTML = `<div class="clay-card p-10 text-center bg-cream/50">ยังไม่มีงานวิ่งเปิดรับสมัคร</div>`;
+                return;
+            }
+            res.events.forEach(evt => {
+                const dateStr = formatDate(evt.event_date);
+                const distButtons = evt.distances.map(d => `
+                    <button onclick="confirmRegister(${evt.id}, '${d}')" class="clay-btn bg-white text-[10px] px-3 py-1 shadow-[2px_2px_0px_#71697a]">
+                        ${d}
+                    </button>
+                `).join('');
+                const div = document.createElement('div');
+                div.className = "clay-card overflow-hidden flex flex-col mb-6 bg-beige";
+                const imgPlaceholder = `https://placehold.co/600x400/d9d2b6/71697a?text=${encodeURIComponent(evt.name)}`;
+                div.innerHTML = `
+                    <div class="relative w-full aspect-[16/9] overflow-hidden bg-cream border-b-2 border-grape-gray">
+                        <img src="${evt.image_url || imgPlaceholder}" class="w-full h-full object-cover" onerror="this.src='${imgPlaceholder}'">
+                        <div class="absolute top-3 right-3 bg-[#e4be9e] border-2 border-grape-gray px-3 py-1 rounded-lg text-[10px] font-black text-grape-gray shadow-[2px_2px_0px_#71697a]">
+                            ${dateStr}
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-black text-xl text-grape-gray mb-1 uppercase tracking-tighter">${evt.name}</h3>
+                        <p class="text-[10px] uppercase text-grape-gray/50 mb-4 font-black">Categories</p>
+                        <div class="flex flex-wrap gap-3">${distButtons}</div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function formatDate(dateStr) {
+            try {
+                const d = new Date(dateStr);
+                return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+            } catch (e) { return dateStr; }
+        }
+
+        async function showMyEvents() {
+            switchView('my-events');
+            renderMyEvents();
+        }
+
+        function renderMyEvents() {
+            const container = document.getElementById('my-events-container');
+            container.innerHTML = '';
+
+            if (allRegistrations.length === 0) {
+                container.innerHTML = `
+                    <div class="clay-card p-10 text-center bg-beige">
+                        <p class="text-grape-gray font-bold mb-4 italic">คุณยังไม่ได้สมัครงานวิ่งใดๆ</p>
+                        <button onclick="fetchAndShowEvents()" class="clay-btn px-6 py-2 text-xs">คลิกเพื่อสมัครเลย!</button>
+                    </div>
+                `;
+                return;
+            }
+
+            allRegistrations.forEach(reg => {
+                const isApproved = reg.status === 'approved';
+                const statusLabel = isApproved ? 'อนุมัติแล้ว' : 'กำลังรอตรวจ';
+                const statusColor = isApproved ? 'bg-pale-green' : 'bg-peach';
+
+                const div = document.createElement('div');
+                div.className = "clay-card p-4 flex items-center justify-between bg-white hover:border-peach transition-colors cursor-pointer";
+                div.onclick = () => {
+                    if (isApproved) renderTicketView(reg, currentUserDB);
+                    else renderPendingView(reg);
+                };
+
+                div.innerHTML = `
+                    <div class="flex flex-col">
+                        <h3 class="font-black text-grape-gray uppercase text-sm">${reg.events?.name || '---'}</h3>
+                        <p class="text-[10px] font-bold text-grape-gray/50 uppercase">${reg.distance} | ${reg.status}</p>
+                    </div>
+                    <div class="${statusColor} px-3 py-1 rounded-full text-[8px] font-black text-grape-gray uppercase border-2 border-grape-gray shadow-[2px_2px_0px_rgba(0,0,0,0.1)]">
+                        ${statusLabel}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function confirmRegister(eventId, distance) {
+            const { isConfirmed } = await Swal.fire({
+                title: 'สมัครกิจกรรม?',
+                text: `ระยะ ${distance} ใช่หรือไม่?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยัน',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#e4be9e',
+                cancelButtonColor: '#71697a',
+                background: '#f2f6d0',
+                color: '#71697a'
+            });
+            if (isConfirmed) {
+                updateLoading('กำลังสมัคร...', true);
+                await supabaseClient.functions.invoke('checkin-process', {
+                    body: {
+                        action: 'register_event',
+                        lineUserId: currentUser.userId,
+                        payload: {
+                            displayName: currentUser.displayName,
+                            pictureUrl: currentUser.pictureUrl,
+                            eventId, distance
+                        }
+                    }
+                });
+                main();
+            }
+        }
+
+        function renderPendingView(reg) {
+            switchView('pending');
+            document.getElementById('pending-event-name').innerText = reg.events?.name || '---';
+            document.getElementById('pending-event-dist').innerText = reg.distance;
+        }
+
+        function renderTicketView(reg, runner) {
+            currentReg = reg;
+            switchView('ticket');
+            document.getElementById('ticket-event-name').innerText = reg.events?.name || '---';
+            document.getElementById('ticket-name').innerText = runner.display_name;
+            if (runner.picture_url) document.getElementById('ticket-img').src = runner.picture_url;
+            document.getElementById('ticket-bib').innerText = reg.bib_number;
+            document.getElementById('ticket-dist').innerText = reg.distance;
+            if (reg.is_checked_in) {
+                document.getElementById('checkin-action-area').classList.add('hidden');
+                document.getElementById('checked-in-state').classList.remove('hidden');
+                const t = new Date(reg.checked_in_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('ticket-checkin-time').innerText = `Checked in at ${t} น.`;
+            } else {
+                document.getElementById('checkin-action-area').classList.remove('hidden');
+                document.getElementById('checked-in-state').classList.add('hidden');
+            }
+        }
+
+        async function shareCard() {
+            if (!liff.isApiAvailable('shareTargetPicker')) {
+                Swal.fire('Note', 'ยังไม่ได้เปิด ShareTargetPicker', 'info');
+                return;
+            }
+            try {
+                const name = document.getElementById('ticket-name').innerText;
+                const eventName = document.getElementById('ticket-event-name').innerText;
+                const eventImage = currentReg?.events?.image_url || "https://placehold.co/600x400/e4be9e/71697a?text=READY+TO+RUN";
+
+                await liff.shareTargetPicker([{
+                    "type": "flex",
+                    "altText": "ฉันสมัครงานวิ่งแล้วนะ!",
+                    "contents": {
+                        "type": "bubble",
+                        "hero": {
+                            "type": "image",
+                            "url": eventImage,
+                            "size": "full",
+                            "aspectRatio": "20:13",
+                            "aspectMode": "cover"
+                        },
+                        "body": {
+                            "type": "box", "layout": "vertical", "backgroundColor": "#f2f6d0", "contents": [
+                                { "type": "text", "text": "ฉันพร้อมวิ่งแล้ว!", "weight": "bold", "size": "xl", "color": "#71697a" },
+                                { "type": "text", "text": "Event: " + eventName, "margin": "md", "color": "#71697a", "size": "sm" },
+                                { "type": "text", "text": "Runner: " + name, "color": "#71697a", "size": "sm" }
+                            ]
+                        },
+                        "footer": {
+                            "type": "box", "layout": "vertical", "backgroundColor": "#f2f6d0", "contents": [
+                                { "type": "button", "action": { "type": "uri", "label": "สมัครวิ่งเลย!", "uri": "https://liff.line.me/" + LIFF_ID }, "style": "primary", "color": "#e4be9e" }
+                            ]
+                        }
+                    }
+                }]);
+            } catch (err) { }
+        }
+
+        async function handleScanQR() {
+            if (!liff.isInClient()) { Swal.fire('Error', 'เปิดใน LINE แอปฯ', 'warning'); return; }
+            try {
+                let r = null;
+                if (liff.getOS() === 'android') r = await liff.scanCode();
+                else { const v2 = await liff.scanCodeV2(); if (v2.value) r = { value: v2.value }; }
+                if (r && r.value) processCheckIn(r.value);
+            } catch (err) { Swal.fire('Error', 'ไม่สามารถเปิดกล้องได้', 'error'); }
+        }
+
+        async function processCheckIn(qrText) {
+            updateLoading('Checking In...', true);
+            const { data } = await supabaseClient.functions.invoke('checkin-process', {
+                body: { action: 'checkin', lineUserId: currentUser.userId, payload: { qrContent: qrText } }
+            });
+            updateLoading('', false);
+            if (data && data.success) Swal.fire({ icon: 'success', title: 'Success', showConfirmButton: false, timer: 1500 }).then(main);
+            else Swal.fire('Error', data?.message || 'Failed', 'error');
+        }
+
+        window.addEventListener('load', main);
+    </script>
+</body>
+
+</html>
