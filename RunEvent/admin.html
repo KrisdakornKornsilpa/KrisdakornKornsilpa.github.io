@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwiftRun Event Command Center</title>
+    <link id="favicon" rel="icon" href="https://cdn-icons-gif.flaticon.com/16358/16358416.gif">
+    <link id="apple-touch-icon" rel="apple-touch-icon" href="https://cdn-icons-gif.flaticon.com/16358/16358416.gif">
+    <meta name="description" content="SwiftRun Event" />
+    <meta name="author" content="SuperHOF HofKrisda" />
+    <meta property="og:title" content="SwiftRun Event" />
+    <meta property="og:description" content="SwiftRun Event-HofKrisda Thailand" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.hofkrisda.com" />
+    <meta property="og:image" content="https://cdn-icons-gif.flaticon.com/16358/16358416.gif" />
+    <link rel="icon" href="https://cdn-icons-gif.flaticon.com/16358/16358416.gif">
+    <meta name="description" content="SwiftRun Event" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@7/fonts/LINESeedSansTH/LINESeedSansTH.css"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --cream: #f2f6d0;
+            --pale-green: #d0e1d4;
+            --beige: #d9d2b6;
+            --peach: #e4be9e;
+            --grape-gray: #71697a;
+        }
+
+        body {
+            font-family: 'LINE Seed Sans TH', 'Prompt', sans-serif;
+            background: var(--cream);
+            color: var(--grape-gray);
+        }
+
+        .clay-card {
+            background: var(--beige);
+            border: 2px solid var(--grape-gray);
+            border-radius: 20px;
+            box-shadow: 6px 6px 0px var(--grape-gray);
+            transition: all 0.2s ease;
+        }
+
+        .clay-btn {
+            background: var(--peach);
+            color: var(--grape-gray);
+            border: 2px solid var(--grape-gray);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0px var(--grape-gray);
+            font-weight: 800;
+            transition: all 0.1s ease;
+            position: relative;
+        }
+
+        .clay-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px var(--grape-gray);
+        }
+
+        .clay-btn-secondary {
+            background: var(--pale-green);
+        }
+
+        .clay-input {
+            background: #fff;
+            border: 2px solid var(--grape-gray);
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-weight: bold;
+            color: var(--grape-gray);
+        }
+
+        .clay-table-header {
+            background: var(--pale-green);
+            border-bottom: 2px solid var(--grape-gray);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--cream);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--grape-gray);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8">
+
+
+    <div
+        class="clay-card mb-8 bg-white p-4 flex flex-col md:flex-row justify-between items-center gap-4 sticky top-4 z-50">
+        <div class="flex flex-col md:flex-row items-center gap-4">
+            <div class="flex items-center gap-2">
+                <div
+                    class="bg-peach border-2 border-grape-gray w-10 h-10 rounded-xl flex items-center justify-center text-grape-gray font-black text-xl shadow-[4px_4px_0px_#71697a]">
+                    <img src="https://cdn-icons-gif.flaticon.com/11324/11324214.gif" width="60" alt="Logo">
+                </div>
+                <h1 class="text-xl font-black text-grape-gray uppercase tracking-tighter">Command Center</h1>
+            </div>
+            <div class="flex gap-2 p-1 bg-cream/50 border-2 border-grape-gray rounded-xl">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard"
+                    class="px-4 py-2 rounded-lg text-xs font-black uppercase transition-all bg-peach border-2 border-grape-gray shadow-[3px_3px_0px_#71697a]">Dashboard</button>
+                <button onclick="switchTab('approvals')" id="tab-approvals"
+                    class="px-4 py-2 rounded-lg text-xs font-black uppercase transition-all text-grape-gray/50 hover:text-grape-gray flex items-center gap-2">
+                    Approvals <span id="badge-pending"
+                        class="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full hidden">0</span>
+                </button>
+                <button onclick="switchTab('events')" id="tab-events"
+                    class="px-4 py-2 rounded-lg text-xs font-black uppercase transition-all text-grape-gray/50 hover:text-grape-gray">
+                    Events
+                </button>
+            </div>
+        </div>
+        <button onclick="logout()"
+            class="text-xs font-black uppercase text-grape-gray/40 hover:text-red-500 transition-colors">
+            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+        </button>
+    </div>
+
+
+    <div id="view-dashboard" class="fade-in">
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="clay-card p-6 bg-pale-green">
+                <h3 class="text-grape-gray font-black text-xs uppercase tracking-widest opacity-60">ผู้ลงทะเบียน</h3>
+                <p class="text-4xl font-black mt-2 text-grape-gray" id="total-runners">0</p>
+                <div class="text-[10px] font-bold uppercase mt-1 opacity-40 italic">Approved Runners</div>
+            </div>
+            <div class="clay-card p-6 bg-beige">
+                <h3 class="text-grape-gray font-black text-xs uppercase tracking-widest opacity-60">เช็คอินแล้ว</h3>
+                <p class="text-4xl font-black mt-2 text-[#2d7a4d]" id="checked-in-count">0</p>
+                <div class="text-[10px] font-bold uppercase mt-1 opacity-40 italic">Total Check-ins</div>
+            </div>
+            <div class="clay-card p-6 bg-peach">
+                <h3 class="text-grape-gray font-black text-xs uppercase tracking-widest opacity-60">ความคืบหน้า</h3>
+                <p class="text-4xl font-black mt-2 text-grape-gray" id="progress-percent">0%</p>
+                <div class="text-[10px] font-bold uppercase mt-1 opacity-40 italic">Event Progress</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <div class="lg:col-span-2 clay-card bg-white p-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <h2 class="text-xl font-black text-grape-gray uppercase tracking-tighter">รายชื่อนักวิ่ง Active</h2>
+                    <input type="text" id="search-box" placeholder="ค้นหา BIB หรือชื่อ..."
+                        class="clay-input w-full md:w-64 text-sm focus:ring-2 focus:ring-peach outline-none">
+                </div>
+                <div class="overflow-x-auto h-[500px]">
+                    <table class="w-full text-left border-separate border-spacing-y-2">
+                        <thead class="sticky top-0 z-10 bg-white">
+                            <tr class="clay-table-header text-[10px] text-grape-gray">
+                                <th class="py-3 px-4 rounded-l-xl">BIB</th>
+                                <th class="py-3 px-2">นักวิ่ง</th>
+                                <th class="py-3 px-2">สถานะ</th>
+                                <th class="py-3 px-2">Event / Dist</th>
+                                <th class="py-3 px-2">เวลา</th>
+                                <th class="py-3 px-4 rounded-r-xl text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="runners-table-body" class="text-sm">
+                            <!-- Rows injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination Controls -->
+                <div
+                    class="mt-4 flex flex-col md:flex-row justify-between items-center gap-4 pt-4 border-t-2 border-grape-gray/5">
+                    <div class="text-[10px] font-black text-grape-gray/40 uppercase tracking-widest">
+                        Showing <span id="pag-start">0</span> - <span id="pag-end">0</span> of <span
+                            id="pag-total">0</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="prevPage()" id="btn-prev"
+                            class="clay-btn clay-btn-secondary px-4 py-2 text-xs disabled:opacity-30 disabled:pointer-events-none">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div
+                            class="px-4 py-2 bg-beige rounded-lg border-2 border-grape-gray text-xs font-black text-grape-gray">
+                            PAGE <span id="pag-current">1</span>
+                        </div>
+                        <button onclick="nextPage()" id="btn-next"
+                            class="clay-btn clay-btn-secondary px-4 py-2 text-xs disabled:opacity-30 disabled:pointer-events-none">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="flex flex-col gap-6">
+
+                <div class="clay-card p-6 bg-pale-green">
+                    <h2
+                        class="text-lg font-black text-grape-gray mb-4 uppercase tracking-tighter border-b-2 border-grape-gray/10 pb-2">
+                        Check-in Override</h2>
+                    <div
+                        class="bg-white/50 p-3 rounded-xl border-2 border-dashed border-grape-gray/30 text-[10px] font-bold text-grape-gray/60 mb-4 italic">
+                        <i class="fas fa-exclamation-triangle mr-1 text-peach"></i> เฉพาะกรณีฉุกเฉินเท่านั้น
+                    </div>
+                    <input type="text" id="manual-input" class="clay-input w-full mb-4 text-sm"
+                        placeholder="ใส User ID Line">
+                    <button onclick="manualCheckIn()"
+                        class="clay-btn w-full py-3 text-sm uppercase tracking-widest shadow-[3px_3px_0px_#71697a]">Force
+                        Check-in</button>
+                </div>
+
+
+                <div class="clay-card p-6 bg-beige">
+                    <h2
+                        class="text-lg font-black text-grape-gray mb-4 uppercase tracking-tighter border-b-2 border-grape-gray/10 pb-2">
+                        QR Generator</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label
+                                class="text-[10px] font-black text-grape-gray/40 uppercase tracking-widest mb-1 block">Secret
+                                Content</label>
+                            <input type="text" id="qr-secret-input" class="clay-input w-full text-xs "
+                                value="RUN_START_POINT">
+                        </div>
+                        <button onclick="generateQR()"
+                            class="clay-btn clay-btn-secondary w-full py-3 text-sm uppercase tracking-widest shadow-[3px_3px_0px_#71697a]">Display
+                            QR</button>
+
+                        <div id="qr-display-area"
+                            class="hidden flex flex-col items-center p-4 bg-white/50 rounded-2xl border-2 border-dashed border-grape-gray/20">
+                            <div
+                                class="p-2 bg-white border-4 border-grape-gray rounded-2xl shadow-[4px_4px_0px_#71697a] mb-4">
+                                <img id="qr-image" class="w-40 h-40 mix-blend-multiply" src="">
+                            </div>
+                            <button onclick="printQR()"
+                                class="bg-grape-gray text-black text-[10px] font-black uppercase px-6 py-2 rounded-full flex items-center gap-2 hover:opacity-80 transition-all shadow-[2px_2px_0px_#444] active:translate-y-0.5">
+                                <i class="fas fa-print"></i> Print Label
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="view-approvals" class="hidden fade-in">
+        <div class="clay-card bg-white p-6 border-l-8 border-peach">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl font-black text-grape-gray uppercase tracking-tighter">รอการอนุมัติ</h2>
+                    <p class="text-grape-gray font-bold text-xs opacity-50">Pending Approval Queue</p>
+                </div>
+                <button onclick="fetchDashboardData()"
+                    class="clay-btn clay-btn-secondary px-6 py-2 text-xs uppercase tracking-widest shadow-[3px_3px_0px_#71697a]">
+                    <i class="fas fa-sync mr-2"></i> Refresh List
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-separate border-spacing-y-2">
+                    <thead>
+                        <tr class="clay-table-header text-[10px] text-grape-gray">
+                            <th class="py-4 px-4 rounded-l-xl">Runner</th>
+                            <th class="py-4 px-4">Event</th>
+                            <th class="py-4 px-4">Distance</th>
+                            <th class="py-4 px-4">Registered At</th>
+                            <th class="py-4 px-4 rounded-r-xl text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="approval-table-body" class="text-sm">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="view-events" class="hidden fade-in">
+        <div class="flex flex-col lg:flex-row gap-8">
+
+            <div class="w-full lg:w-1/3 clay-card bg-pale-green p-6 h-fit sticky top-24">
+                <h2
+                    class="text-xl font-black text-grape-gray mb-6 uppercase tracking-tighter border-b-2 border-grape-gray/10 pb-2">
+                    จัดการงานวิ่ง</h2>
+                <div class="space-y-5">
+                    <input type="hidden" id="evt-id" value="">
+
+                    <div>
+                        <label
+                            class="block text-[10px] font-black text-grape-gray/40 uppercase tracking-widest mb-1 ml-1">ชื่อกิจกรรม</label>
+                        <input type="text" id="evt-name" class="clay-input w-full text-sm" placeholder="FunRun 2026">
+                    </div>
+
+                    <div>
+                        <label
+                            class="block text-[10px] font-black text-grape-gray/40 uppercase tracking-widest mb-1 ml-1">วันที่จัดกิจกรรม</label>
+                        <input type="date" id="evt-date" class="clay-input w-full text-sm">
+                    </div>
+
+                    <div>
+                        <label
+                            class="block text-[10px] font-black text-grape-gray/40 uppercase tracking-widest mb-1 ml-1">URL
+                            รูปภาพปก</label>
+                        <input type="text" id="evt-image" class="clay-input w-full text-sm"
+                            placeholder="https://image-url.com/poster.jpg">
+                    </div>
+
+                    <div>
+                        <label
+                            class="block text-[10px] font-black text-grape-gray/40 uppercase tracking-widest mb-1 ml-1">เพิ่มระยะทาง</label>
+                        <div class="flex gap-2 mb-3">
+                            <input type="text" id="evt-dist-input" class="clay-input flex-1 text-sm" placeholder="5KM">
+                            <button onclick="addDistanceTag()"
+                                class="clay-btn clay-btn-secondary px-3 shadow-[2px_2px_0px_#71697a]"><i
+                                    class="fas fa-plus"></i></button>
+                        </div>
+                        <div id="dist-tags" class="flex flex-wrap gap-2 min-h-[32px]">
+                            <!-- Tags via JS -->
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 pt-4">
+                        <button onclick="resetEventForm()" id="btn-cancel"
+                            class="hidden flex-1 clay-btn bg-white text-xs uppercase tracking-widest shadow-[3px_3px_0px_#71697a]">ยกเลิก</button>
+                        <button onclick="saveEvent()" id="btn-save"
+                            class="flex-[2] clay-btn w-full py-4 text-sm uppercase tracking-widest shadow-[3px_3px_0px_#71697a]">สร้างกิจกรรม</button>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="w-full lg:w-2/3 clay-card bg-white p-6 relative min-h-[400px]">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-black text-grape-gray uppercase tracking-tighter">รายการกิจกรรมทั้งหมด</h2>
+                    <button onclick="fetchEvents()" class="text-grape-gray/30 hover:text-grape-gray transition-colors">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-separate border-spacing-y-2">
+                        <thead>
+                            <tr class="clay-table-header text-[10px] text-grape-gray">
+                                <th class="py-3 px-4 rounded-l-xl">ชื่อกิจกรรม</th>
+                                <th class="py-3 px-2">วันที่</th>
+                                <th class="py-3 px-2">รูปภาพ</th>
+                                <th class="py-3 px-2">ระยะที่เปิด</th>
+                                <th class="py-3 px-2 text-center">สถานะ</th>
+                                <th class="py-3 px-4 rounded-r-xl text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="event-list-body" class="text-sm">
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIG
+        const SUPABASE_URL = 'https://yabvzfiqkopxrgnpznbf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhYnZ6Zmlxa29weHJnbnB6bmJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDgwODIsImV4cCI6MjA4NDAyNDA4Mn0.jA3iPxvNIZNYrw8H5tk9Z0y5YxDvdAdnzJ65PL4AETw';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let activeCurrentPage = 1;
+        const itemsPerPage = 50;
+        let totalActiveCount = 0;
+
+
+        function logout() {
+            Swal.fire({
+                title: 'Logout?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No',
+                confirmButtonColor: '#7c3aed'
+            }).then((res) => {
+                if (res.isConfirmed) window.close();
+            });
+        }
+
+        function switchTab(tab) {
+
+            ['dashboard', 'approvals', 'events'].forEach(t => {
+                const btn = document.getElementById('tab-' + t);
+                btn.className = "px-4 py-2 rounded-lg text-xs font-black uppercase transition-all text-grape-gray/50 hover:text-grape-gray";
+                if (t === 'approvals') btn.innerHTML = `Approvals <span id="badge-pending" class="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full hidden">0</span>`;
+                document.getElementById('view-' + t).classList.add('hidden');
+            });
+
+
+            const activeBtn = document.getElementById('tab-' + tab);
+            activeBtn.className = "px-4 py-2 rounded-lg text-xs font-black uppercase transition-all bg-peach border-2 border-grape-gray shadow-[3px_3px_0px_#71697a]";
+            document.getElementById('view-' + tab).classList.remove('hidden');
+
+
+            if (tab === 'events') fetchEvents();
+        }
+
+
+        async function initDashboard() {
+            await fetchDashboardData();
+            setInterval(fetchDashboardData, 5000);
+        }
+
+        let searchTimeout;
+        document.getElementById('search-box').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => fetchDashboardData(), 300);
+        });
+
+        async function fetchDashboardData() {
+            try {
+
+                const { data: res, error } = await supabaseClient.functions.invoke('checkin-process', {
+                    body: { action: 'get_admin_dashboard' }
+                });
+
+                if (error || !res.success) throw error || new Error('API Error');
+
+
+                renderApprovals(res.pending);
+                const pendingCount = res.pending.length;
+                const badge = document.getElementById('badge-pending');
+                badge.innerText = pendingCount;
+                badge.classList.toggle('hidden', pendingCount === 0);
+
+
+                const activeRunners = res.active;
+                const searchVal = document.getElementById('search-box').value.toLowerCase();
+                const filteredActive = activeRunners.filter(r =>
+                    (r.bib_number && r.bib_number.toLowerCase().includes(searchVal)) ||
+                    (r.runners && r.runners.display_name && r.runners.display_name.toLowerCase().includes(searchVal))
+                );
+
+                totalActiveCount = filteredActive.length;
+                const totalPages = Math.ceil(totalActiveCount / itemsPerPage) || 1;
+                if (activeCurrentPage > totalPages) activeCurrentPage = totalPages;
+
+                const startIdx = (activeCurrentPage - 1) * itemsPerPage;
+                const paginatedList = filteredActive.slice(startIdx, startIdx + itemsPerPage);
+
+                renderActiveTable(paginatedList);
+                updatePaginationUI(totalPages, startIdx, paginatedList.length);
+                updateStats(activeRunners);
+
+            } catch (err) {
+                console.error("Fetch Error:", err);
+            }
+        }
+
+        function updateStats(runners) {
+            const total = runners.length;
+            const checkedIn = runners.filter(r => r.is_checked_in).length;
+            document.getElementById('total-runners').innerText = total;
+            document.getElementById('checked-in-count').innerText = checkedIn;
+            const pct = total > 0 ? Math.round((checkedIn / total) * 100) : 0;
+            document.getElementById('progress-percent').innerText = pct + '%';
+        }
+
+        function updatePaginationUI(totalPages, startIdx, currentListCount) {
+            document.getElementById('pag-current').innerText = activeCurrentPage;
+            document.getElementById('pag-total').innerText = totalActiveCount;
+            document.getElementById('pag-start').innerText = totalActiveCount > 0 ? startIdx + 1 : 0;
+            document.getElementById('pag-end').innerText = startIdx + currentListCount;
+
+            document.getElementById('btn-prev').disabled = activeCurrentPage === 1;
+            document.getElementById('btn-next').disabled = activeCurrentPage >= totalPages;
+        }
+
+        function nextPage() {
+            activeCurrentPage++;
+            fetchDashboardData();
+        }
+
+        function prevPage() {
+            if (activeCurrentPage > 1) {
+                activeCurrentPage--;
+                fetchDashboardData();
+            }
+        }
+
+        function renderApprovals(list) {
+            const tbody = document.getElementById('approval-table-body');
+            tbody.innerHTML = '';
+
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="py-12 text-center text-grape-gray/30 font-bold italic uppercase tracking-widest">✅ No pending approvals</td></tr>';
+                return;
+            }
+
+            list.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'bg-white border-2 border-grape-gray/5 rounded-2xl mb-2 hover:border-peach transition-all';
+                tr.innerHTML = `
+                    <td class="py-4 px-4 flex items-center gap-3">
+                         <img src="${item.runners.picture_url}" class="w-10 h-10 rounded-full border-2 border-grape-gray shadow-[2px_2px_0px_#71697a]">
+                         <div>
+                            <span class="block font-black text-grape-gray">${item.runners.display_name}</span>
+                            <span class="text-[10px] text-grape-gray/40">...${item.runners.line_user_id.slice(-6)}</span>
+                         </div>
+                    </td>
+                    <td class="py-4 px-4 text-grape-gray font-bold">${item.events.name}</td>
+                    <td class="py-4 px-4"><span class="bg-peach border border-grape-gray text-grape-gray px-3 py-1 rounded-lg text-[10px] font-black uppercase shadow-[2px_2px_0px_#71697a]">${item.distance}</span></td>
+                    <td class="py-4 px-4 text-grape-gray/40 text-[10px] font-bold uppercase tracking-tighter">${new Date(item.created_at).toLocaleString('th-TH')}</td>
+                    <td class="py-4 px-4 text-center">
+                        <button onclick="approveRunner(${item.id})" class="clay-btn px-6 py-2 text-[10px] uppercase tracking-widest shadow-[2px_2px_0px_#71697a]">
+                            Approve
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderActiveTable(runners) {
+            const tbody = document.getElementById('runners-table-body');
+            const existingRows = Array.from(tbody.children);
+            const existingMap = new Map(existingRows.map(row => [row.dataset.id, row]));
+
+            runners.forEach((item, index) => {
+                const timeStr = item.is_checked_in
+                    ? new Date(item.checked_in_at).toLocaleString('th-TH', {
+                        timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                    })
+                    : '-';
+
+                const statusBadge = item.is_checked_in
+                    ? `<span class="bg-pale-green border border-grape-gray/20 text-[#2d7a4d] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-[2px_2px_0px_rgba(0,0,0,0.1)]"><i class="fas fa-check-circle mr-1"></i> PRESENT</span>`
+                    : `<span class="bg-cream/50 border border-grape-gray/10 text-grape-gray/30 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter">ABSENT</span>`;
+
+                const actionBtn = item.is_checked_in
+                    ? `<button class="opacity-20 cursor-not-allowed text-grape-gray text-xs"><i class="fas fa-check-double"></i></button>`
+                    : `<button onclick="handleRowCheckIn('${item.bib_number}', '${item.runners.display_name.replace(/'/g, "\\'")}')" class="bg-peach/80 hover:bg-peach text-grape-gray w-8 h-8 rounded-lg border border-grape-gray shadow-[2px_2px_0px_#71697a] transition-all"><i class="fas fa-sign-in-alt"></i></button>`;
+
+                const innerHTML = `
+                    <td class="py-3 px-4 font-black text-grape-gray">${item.bib_number}</td>
+                    <td class="py-3 px-2">
+                        <div class="flex items-center gap-2">
+                            <img src="${item.runners.picture_url}" class="w-8 h-8 rounded-full border border-grape-gray/20 shadow-[2px_2px_0px_#71697a]">
+                            <div class="flex flex-col">
+                                <span class="font-black text-grape-gray text-xs truncate max-w-[120px]">${item.runners.display_name}</span>
+                                <button onclick="copyToClipboard('${item.runners.line_user_id}')" class="text-[8px] font-bold text-grape-gray/40 hover:text-peach transition-colors text-left uppercase">Copy ID <i class="fas fa-copy"></i></button>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-2">${statusBadge}</td>
+                    <td class="py-3 px-2 text-[10px] font-bold text-grape-gray/50 uppercase leading-none">
+                        ${item.events.name}<br>
+                        <span class="bg-grape-gray/10 px-1 rounded text-[8px]">${item.distance}</span>
+                    </td>
+                    <td class="py-3 px-2 text-[8px] font-black text-grape-gray/40 uppercase tracking-tighter">${timeStr} น.</td>
+                    <td class="py-3 px-4 text-center">${actionBtn}</td>
+                 `;
+
+                let tr = existingMap.get(String(item.id));
+                if (tr) {
+                    if (tr.innerHTML.replace(/\s/g, '') !== innerHTML.replace(/\s/g, '')) {
+                        tr.innerHTML = innerHTML;
+                        tr.classList.add('bg-peach/10');
+                        setTimeout(() => tr.classList.remove('bg-peach/10'), 1000);
+                    }
+                    existingMap.delete(String(item.id));
+                } else {
+                    tr = document.createElement('tr');
+                    tr.className = 'bg-white border-2 border-grape-gray/5 rounded-2xl hover:border-beige transition-all';
+                    tr.dataset.id = item.id;
+                    tr.innerHTML = innerHTML;
+                }
+
+                tbody.appendChild(tr);
+            });
+
+            existingMap.forEach(row => row.remove());
+        }
+
+
+        let selectedDistances = [];
+        let allEventsCache = [];
+
+        function addDistanceTag() {
+            const input = document.getElementById('evt-dist-input');
+            const val = input.value.trim().toUpperCase();
+            if (!val) return;
+            if (!selectedDistances.includes(val)) {
+                selectedDistances.push(val);
+                renderDistanceTags();
+            }
+            input.value = '';
+        }
+
+        function removeDistanceTag(dist) {
+            selectedDistances = selectedDistances.filter(d => d !== dist);
+            renderDistanceTags();
+        }
+
+        function renderDistanceTags() {
+            const div = document.getElementById('dist-tags');
+            div.innerHTML = selectedDistances.map(d => `
+                <span class="bg-white border-2 border-grape-gray text-grape-gray px-3 py-1 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 shadow-[2px_2px_0px_#71697a]">
+                    ${d} <i onclick="removeDistanceTag('${d}')" class="fas fa-times cursor-pointer hover:text-red-500 transition-colors"></i>
+                </span>
+            `).join('');
+        }
+
+        async function saveEvent() {
+            const id = document.getElementById('evt-id').value;
+            const name = document.getElementById('evt-name').value;
+            const date = document.getElementById('evt-date').value;
+            const imageUrl = document.getElementById('evt-image').value;
+
+            if (!name || !date || selectedDistances.length === 0) {
+                Swal.fire('Error', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
+                return;
+            }
+
+            const actionName = id ? 'admin_update_event' : 'admin_create_event';
+            const payload = {
+                name: name,
+                eventDate: date,
+                distances: selectedDistances,
+                imageUrl: imageUrl
+            };
+            if (id) payload.eventId = id;
+
+            console.log(`[saveEvent] Sending payload:`, payload);
+
+            const { data, error } = await supabaseClient.functions.invoke('checkin-process', {
+                body: {
+                    action: actionName,
+                    payload: payload
+                }
+            });
+
+            if (error || (data && !data.success)) {
+                console.error(`[saveEvent] Error:`, error || data?.message);
+                const errMsg = error?.message || data?.message || 'ดำเนินการไม่สำเร็จ';
+                Swal.fire('Error', errMsg, 'error');
+            } else {
+                console.log(`[saveEvent] Success:`, data);
+                Swal.fire('Success', 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
+                resetEventForm();
+                fetchEvents();
+            }
+        }
+
+        function resetEventForm() {
+            document.getElementById('evt-id').value = '';
+            document.getElementById('evt-name').value = '';
+            document.getElementById('evt-date').value = '';
+            document.getElementById('evt-image').value = '';
+            selectedDistances = [];
+            renderDistanceTags();
+
+            document.getElementById('btn-save').innerText = 'สร้างกิจกรรม';
+            document.getElementById('btn-cancel').classList.add('hidden');
+        }
+
+        function editEvent(id) {
+            const evt = allEventsCache.find(e => e.id == id);
+            if (!evt) return;
+
+            document.getElementById('evt-id').value = evt.id;
+            document.getElementById('evt-name').value = evt.name;
+            document.getElementById('evt-date').value = evt.event_date;
+            document.getElementById('evt-image').value = evt.image_url || '';
+            selectedDistances = [...evt.distances];
+            renderDistanceTags();
+
+            document.getElementById('btn-save').innerText = 'บันทึกแก้ไข';
+            document.getElementById('btn-cancel').classList.remove('hidden');
+        }
+
+        async function fetchEvents() {
+            const { data, error } = await supabaseClient.functions.invoke('checkin-process', {
+                body: { action: 'admin_get_events' }
+            });
+
+            if (error) return;
+            allEventsCache = data.events;
+
+            const tbody = document.getElementById('event-list-body');
+            tbody.innerHTML = '';
+
+            data.events.forEach(evt => {
+                const dateStr = new Date(evt.event_date).toLocaleDateString('th-TH');
+                const badgeColor = evt.is_active ? 'bg-pale-green border border-[#2d7a4d]/20 text-[#2d7a4d]' : 'bg-cream text-grape-gray/40';
+                const buttonText = evt.is_active ? 'ACTIVE' : 'INACTIVE';
+                const newState = !evt.is_active;
+
+                const tr = document.createElement('tr');
+                tr.className = 'bg-white border-2 border-grape-gray/5 rounded-2xl hover:border-beige transition-all';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-black text-grape-gray">${evt.name}</td>
+                    <td class="py-3 px-2 text-grape-gray/50 font-bold text-xs uppercase tracking-tighter">${dateStr}</td>
+                    <td class="py-3 px-2">
+                        <img src="${evt.image_url || 'https://placehold.co/100x60/d9d2b6/71697a?text=No+Image'}" 
+                             class="w-16 h-10 object-cover rounded-xl border-2 border-grape-gray shadow-[2px_2px_0px_#71697a]"
+                             onerror="this.src='https://placehold.co/100x60/d9d2b6/71697a?text=Error'">
+                    </td>
+                    <td class="py-3 px-2 text-[10px] font-black text-peach uppercase tracking-widest">${evt.distances.join(' • ')}</td>
+                    <td class="py-3 px-2 text-center">
+                        <button onclick="toggleEvent(${evt.id}, ${newState})" class="${badgeColor} px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-[2px_2px_0px_rgba(0,0,0,0.1)] transition hover:opacity-80 w-24">
+                            ${buttonText}
+                        </button>
+                    </td>
+                    <td class="py-3 px-4 text-center flex items-center justify-center gap-2">
+                        <button onclick="editEvent(${evt.id})" class="text-grape-gray/40 hover:text-peach text-xs font-black uppercase tracking-widest transition-colors">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button onclick="deleteEvent(${evt.id}, '${evt.name.replace(/'/g, "\\'")}')" class="text-grape-gray/20 hover:text-red-500 text-xs font-black uppercase tracking-widest transition-colors">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function toggleEvent(id, newState) {
+            const { error } = await supabaseClient.functions.invoke('checkin-process', {
+                body: {
+                    action: 'admin_toggle_event',
+                    payload: { eventId: id, isActive: newState }
+                }
+            });
+            if (!error) fetchEvents();
+        }
+
+        async function deleteEvent(eventId, eventName) {
+            const { isConfirmed } = await Swal.fire({
+                title: 'ยืนยันการลบ?',
+                text: `คุณต้องการลบกิจกรรม "${eventName}" ใช่หรือไม่? (ข้อมูลการสมัครทั้งหมดจะถูกลบด้วย)`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#71697a',
+                cancelButtonColor: '#d9d2b6',
+                confirmButtonText: 'ใช่, ลบเลย!',
+                cancelButtonText: 'ยกเลิก',
+                background: '#f2f6d0',
+                color: '#71697a'
+            });
+
+            if (isConfirmed) {
+                const { error } = await supabaseClient.functions.invoke('checkin-process', {
+                    body: { action: 'admin_delete_event', payload: { eventId } }
+                });
+
+                if (error) {
+                    Swal.fire('Error', 'ไม่สามารถลบกิจกรรมได้', 'error');
+                } else {
+                    Swal.fire({
+                        title: 'ลบสำเร็จ!',
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        background: '#f2f6d0',
+                        color: '#71697a'
+                    });
+                    fetchEvents();
+                }
+            }
+        }
+
+
+        async function approveRunner(regId) {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            const { data, error } = await supabaseClient.functions.invoke('checkin-process', {
+                body: { action: 'admin_approve', payload: { registrationId: regId } }
+            });
+
+            if (error) {
+                Swal.fire('Error', 'Failed to approve', 'error');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            } else {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Approved!',
+                    text: `BIB: ${data.bib}`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                fetchDashboardData();
+            }
+        }
+
+        async function handleRowCheckIn(bib, name) {
+            const { isConfirmed } = await Swal.fire({
+                title: 'Force Check-in?',
+                text: `คุณต้องการ Check-in ให้คุณ ${name} (BIB: ${bib}) ใช่หรือไม่?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#71697a',
+                confirmButtonText: 'ยืนยัน',
+                cancelButtonText: 'ยกเลิก',
+                background: '#f2f6d0',
+                color: '#71697a'
+            });
+
+            if (isConfirmed) {
+                await performCheckInOverride(bib, 'Row Action');
+            }
+        }
+
+        async function manualCheckIn() {
+            const userId = document.getElementById('manual-input').value;
+            if (!userId) return Swal.fire('Error', 'กรุณาระบุ BIB หรือ User ID', 'error');
+            await performCheckInOverride(userId, 'Manual Input');
+        }
+
+        async function performCheckInOverride(targetId, reason) {
+            const { data: res, error } = await supabaseClient.functions.invoke('checkin-process', {
+                body: { action: 'admin_override', payload: { targetUserId: targetId, reason: reason } }
+            });
+
+            if (error || !res.success) {
+                Swal.fire('Error', res?.message || 'Check-in Failed', 'error');
+            } else {
+                Swal.fire({
+                    title: 'Check-in Success!',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    background: '#f2f6d0',
+                    color: '#71697a'
+                });
+                fetchDashboardData();
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    background: '#71697a',
+                    color: '#fff'
+                });
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Copied User ID!'
+                });
+            });
+        }
+
+        function generateQR() {
+            const secret = document.getElementById('qr-secret-input').value;
+            if (!secret || !secret.startsWith('RUN_')) {
+                Swal.fire('Error', 'Prefix must be RUN_', 'error');
+                return;
+            }
+            const url = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(secret)}`;
+            const img = document.getElementById('qr-image');
+            img.onload = () => document.getElementById('qr-display-area').classList.remove('hidden');
+            img.src = url;
+            localStorage.setItem('admin_qr_secret', secret);
+        }
+
+        function printQR() {
+            const imgUrl = document.getElementById('qr-image').src;
+            const secret = document.getElementById('qr-secret-input').value;
+            const win = window.open('', '_blank');
+            win.document.write(`<html><body style="text-align:center;font-family:sans-serif;padding:40px;"><h1>Scan to Check-in</h1><img src="${imgUrl}" width="400"><h2 style="margin-top:20px">${secret}</h2><script>window.print();<\/script></body></html>`);
+            win.document.close();
+        }
+
+
+        const saved = localStorage.getItem('admin_qr_secret');
+        if (saved) document.getElementById('qr-secret-input').value = saved;
+
+        document.getElementById('search-box').addEventListener('input', () => {
+            activeCurrentPage = 1;
+            fetchDashboardData();
+        });
+
+        initDashboard();
+    </script>
+</body>
+
+</html>
