@@ -163,7 +163,7 @@
                 .from('shareflex')
                 .select('*')
                 .order('created_at', { ascending: false })
-                .limit(40);
+                .limit(10); //--------จำนวนที่แสดง----
             
             if (error) throw error;
             renderList(data, false);
