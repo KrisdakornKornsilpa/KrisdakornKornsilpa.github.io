@@ -552,10 +552,10 @@ async function sendTelegramNotification_ClientSide(formData, imageUrls) {
                 const messagesToSend = [
                  {
                         "type": "flex",
-                        "altText": "การลงทะเบียนของคุณเสร็จสมบูรณ์",
+                        "altText": "register",
                         "contents": 
  //--------------------                       
-                        {
+         {
   "type": "bubble",
   "size": "kilo",
   "header": {
@@ -568,7 +568,7 @@ async function sendTelegramNotification_ClientSide(formData, imageUrls) {
         "wrap": true,
         "weight": "bold",
         "size": "lg",
-        "color": "#06C755",
+        "color": "#2B7FFF",
         "align": "center"
       }
     ]
@@ -620,70 +620,100 @@ async function sendTelegramNotification_ClientSide(formData, imageUrls) {
         "layout": "horizontal",
         "contents": [
           {
-            "type": "text",
-            "text": "ชื่อ-สกุล:",
-            "wrap": true,
-            "flex": 3,
-            "size": "sm",
-            "color": "#989898"
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": "ชื่อ-สกุล:",
+                "wrap": true,
+                "size": "sm",
+                "color": "#989898"
+              }
+            ],
+            "width": "27%"
           },
           {
-            "type": "text",
-             "text": `${formData.title} ${formData.first_name} ${formData.last_name}`,
-            "wrap": true,
-            "size": "sm",
-            "margin": "md",
-            "flex": 7,
-            "color": "#222222",
-            "align": "start"
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": `${formData.title} ${formData.first_name} ${formData.last_name}`,
+                "wrap": true,
+                "size": "sm",
+                "color": "#222222"
+              }
+            ]
           }
         ],
         "margin": "xxl"
       },
       {
         "type": "box",
-        "layout": "baseline",
+        "layout": "horizontal",
         "contents": [
           {
-            "type": "text",
-            "text": "อีเมล:",
-            "wrap": true,
-            "flex": 3,
-            "size": "sm",
-            "color": "#989898"
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": "อีเมล:",
+                "wrap": true,
+                "size": "sm",
+                "color": "#989898"
+              }
+            ],
+            "width": "27%"
           },
           {
-            "type": "text",
-            "text": `${formData.email}`,
-            "wrap": true,
-            "size": "sm",
-            "margin": "md",
-            "flex": 7,
-            "color": "#222222"
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": `${formData.email}`,
+                "wrap": true,
+                "size": "sm",
+                "color": "#222222"
+              }
+            ]
           }
         ],
         "margin": "md"
       },
       {
         "type": "box",
-        "layout": "baseline",
+        "layout": "horizontal",
         "contents": [
           {
-            "type": "text",
-            "text": "เบอร์โทร:",
-            "wrap": true,
-            "flex": 3,
-            "size": "sm",
-            "color": "#989898"
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": "เบอร์โทร:",
+                "wrap": true,
+                "flex": 3,
+                "size": "sm",
+                "color": "#989898"
+              }
+            ],
+            "width": "27%"
           },
           {
-            "type": "text",
-            "wrap": true,
-            "size": "sm",
-            "margin": "md",
-            "flex": 7,
-            "text": `${formData.phone}`,
-            "color": "#222222"
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "wrap": true,
+                "size": "sm",
+                 "text": `${formData.phone}`,
+                "color": "#222222"
+              }
+            ]
           }
         ],
         "margin": "md"
@@ -694,18 +724,15 @@ async function sendTelegramNotification_ClientSide(formData, imageUrls) {
   "footer": {
     "type": "box",
     "layout": "vertical",
-    "contents": [
-      {
-        "type": "text",
-        "size": "xs",
-        "color": "#989898",
-        "align": "end",
-        "text": `${formData.created_at}`
-      }
-    ],
-    "width": "95%",
-    "paddingTop": "none",
-    "paddingBottom": "sm"
+    "contents": [],
+    "paddingTop": "md",
+    "paddingBottom": "md",
+    "background": {
+      "type": "linearGradient",
+      "angle": "0deg",
+      "startColor": "#2B7FFF",
+      "endColor": "#ffffff"
+    }
   }
 }
 //-----------------                    
