@@ -663,11 +663,16 @@ async function sendTelegramNotification_ClientSide(formData, imageUrls) {
                           }
                         ],
                         "spacing": "sm"
-                      }
+                      },
+ "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [],
+    "paddingAll": "xs"
+  }
                     }
                     }
                 ];
-
 
                 if (liff.isInClient()) {
                     await liff.sendMessages(messagesToSend);
