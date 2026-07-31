@@ -553,126 +553,165 @@ async function sendTelegramNotification_ClientSide(formData, imageUrls) {
                  {
                         "type": "flex",
                         "altText": "การลงทะเบียนของคุณเสร็จสมบูรณ์",
-                        "contents": {
-                      "type": "bubble",
-                      "header": {
-                        "type": "box",
-                        "layout": "vertical",
-                        "contents": [
-                          {
-                            "type": "text",
-                            "text": "ลงทะเบียนเรียบร้อย",
-                            "wrap": true,
-                            "weight": "bold",
-                            "size": "xl",
-                            "color": "#06C755",
-                            "margin": "none",
-                            "align": "center"
-                          }
-                        ]
-                      },
-                      "hero": {
-                        "type": "image",
-                        "url": imageUrls[0],
-                        "aspectMode": "fit",
-                        "aspectRatio": "1:1",
-                        "size": "full"
-                      },
-                      "body": {
-                        "type": "box",
-                        "layout": "vertical",
-                        "contents": [
-                          {
-                            "type": "text",
-                            "text": "ขอบคุณที่ลงทะเบียนเข้าร่วมกิจกรรมกับเรา",
-                            "color": "#aaaaaa",
-                            "adjustMode": "shrink-to-fit"
-                          },
-                          {
-                            "type": "box",
-                            "layout": "horizontal",
-                            "contents": [
-                              {
-                                "type": "text",
-                                "text": "ชื่อ-สกุล:",
-                                "wrap": true,
-                                "flex": 3,
-                                "size": "xs",
-                                "color": "#989898"
-                              },
-                              {
-                                "type": "text",
-                                "text": `${formData.title} ${formData.first_name} ${formData.last_name}`,
-                                "wrap": true,
-                                "size": "xs",
-                                "margin": "md",
-                                "flex": 7,
-                                "color": "#222222",
-                                "align": "start"
-                              }
-                            ],
-                            "margin": "xxl"
-                          },
-                          {
-                            "type": "box",
-                            "layout": "baseline",
-                            "contents": [
-                              {
-                                "type": "text",
-                                "text": "อีเมล:",
-                                "wrap": true,
-                                "flex": 3,
-                                "size": "xs",
-                                "color": "#989898"
-                              },
-                              {
-                                "type": "text",
-                                "text": `${formData.email}`,
-                                "wrap": true,
-                                "size": "xs",
-                                "margin": "md",
-                                "flex": 7,
-                                "color": "#222222"
-                              }
-                            ],
-                            "margin": "md"
-                          },
-                          {
-                            "type": "box",
-                            "layout": "baseline",
-                            "contents": [
-                              {
-                                "type": "text",
-                                "text": "เบอร์โทร:",
-                                "wrap": true,
-                                "flex": 3,
-                                "size": "xs",
-                                "color": "#989898"
-                              },
-                              {
-                                "type": "text",
-                                "wrap": true,
-                                "size": "xs",
-                                "margin": "md",
-                                "flex": 7,
-                                "text": `${formData.phone}`,
-                                "color": "#222222"
-                              }
-                            ],
-                            "margin": "md"
-                          }
-                        ],
-                        "spacing": "sm"
-                      },
- "footer": {
+                        "contents": 
+ //--------------------                       
+                        {
+  "type": "bubble",
+  "size": "kilo",
+  "header": {
     "type": "box",
     "layout": "vertical",
-    "contents": [],
-    "paddingAll": "xs"
+    "contents": [
+      {
+        "type": "text",
+        "text": "ลงทะเบียนเรียบร้อย",
+        "wrap": true,
+        "weight": "bold",
+        "size": "lg",
+        "color": "#06C755",
+        "align": "center"
+      }
+    ]
+  },
+  "hero": {
+    "type": "box",
+    "layout": "horizontal",
+    "contents": [
+      {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [],
+        "width": "15%"
+      },
+      {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [
+          {
+            "type": "image",
+            "url": imageUrls[0],
+            "size": "full",
+            "aspectMode": "cover"
+          }
+        ],
+        "cornerRadius": "200px"
+      },
+      {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [],
+        "width": "15%"
+      }
+    ]
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "ข้อมูลของท่าน คือ",
+        "color": "#aaaaaa",
+        "adjustMode": "shrink-to-fit",
+        "align": "center"
+      },
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "text",
+            "text": "ชื่อ-สกุล:",
+            "wrap": true,
+            "flex": 3,
+            "size": "sm",
+            "color": "#989898"
+          },
+          {
+            "type": "text",
+             "text": `${formData.title} ${formData.first_name} ${formData.last_name}`,
+            "wrap": true,
+            "size": "sm",
+            "margin": "md",
+            "flex": 7,
+            "color": "#222222",
+            "align": "start"
+          }
+        ],
+        "margin": "xxl"
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "contents": [
+          {
+            "type": "text",
+            "text": "อีเมล:",
+            "wrap": true,
+            "flex": 3,
+            "size": "sm",
+            "color": "#989898"
+          },
+          {
+            "type": "text",
+            "text": `${formData.email}`,
+            "wrap": true,
+            "size": "sm",
+            "margin": "md",
+            "flex": 7,
+            "color": "#222222"
+          }
+        ],
+        "margin": "md"
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "contents": [
+          {
+            "type": "text",
+            "text": "เบอร์โทร:",
+            "wrap": true,
+            "flex": 3,
+            "size": "sm",
+            "color": "#989898"
+          },
+          {
+            "type": "text",
+            "wrap": true,
+            "size": "sm",
+            "margin": "md",
+            "flex": 7,
+            "text": `${formData.phone}`,
+            "color": "#222222"
+          }
+        ],
+        "margin": "md"
+      }
+    ],
+    "spacing": "sm"
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "size": "xs",
+        "color": "#989898",
+        "align": "end",
+        "text": `${formData.created_at}`
+      }
+    ],
+    "width": "95%",
+    "paddingTop": "none",
+    "paddingBottom": "sm"
   }
-                    }
+}
+//-----------------                    
                     }
                 ];
+
 
                 if (liff.isInClient()) {
                     await liff.sendMessages(messagesToSend);
