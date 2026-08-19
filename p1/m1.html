@@ -163,7 +163,7 @@
             </div>
             <a href="https://www.hofkrisda.com/HOF_supabase/newregister/form04test.html" class="btn btn-secondary"> ▪︎
                 ปรึกษาผู้เชี่ยวชาญ Darin</a>
-            <button onclick="openAndClose('https://www.w3schools.com/')" class="btn btn-secondary">ทดสอบ 1</button>
+            <button onclick="openAndClose('https://www.w3schools.com/')" class="btn btn-secondary">ทดสอบ 3</button>
 
             <!--- <a href="?refer=a13" class="btn btn-info">คอนเทนต์ที่แนะนำในการส่งดันคลิป</a>
         <a href="?refer=a14" class="btn btn-primary">วิธีเติมเหรียญ TikTok ทำไงน้อ..</a> 
@@ -213,20 +213,26 @@
             return liff.sendMessages([{ type: "text", text }]).then(() => liff.closeWindow());
         }
 
-        function openAndClose(url) {
-            if (liff.isInClient()) {
-                // อยู่ใน LINE app: เปิดเบราว์เซอร์ภายนอก แล้วรอ 500ms ก่อนปิด LIFF
-                liff.openWindow({
-                    url: url,
-                    external: true
-                });
-                setTimeout(() => {
-                    liff.closeWindow();
-                }, 1500);
-            } else {
-                // อยู่บน PC browser: เปิดแท็บใหม่แล้วปิดแท็บปัจจุบัน
+        async function openAndClose(url) {
+            try {
+                await initLiff();
+                if (liff.isInClient()) {
+                    // อยู่ใน LINE app: เปิดเบราว์เซอร์ภายนอก แล้วรอ 1 วินาทีก่อนปิด LIFF
+                    liff.openWindow({
+                        url: url,
+                        external: true
+                    });
+                    setTimeout(() => {
+                        liff.closeWindow();
+                    }, 1500);
+                } else {
+                    // อยู่บน PC browser: เปิดแท็บใหม่
+                    window.open(url, '_blank');
+                }
+            } catch (error) {
+                // ถ้า LIFF init ไม่สำเร็จ ให้เปิดลิงก์แบบปกติ
+                console.error("openAndClose error:", error);
                 window.open(url, '_blank');
-                window.close();
             }
         }
 
