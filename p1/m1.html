@@ -161,9 +161,9 @@
                     <a href="?refer=a09" class="btn btn-primary">- Smart CI Ultimate 2026</a>
                 </div>
             </div>
-            <a href="https://www.hofkrisda.com/HOF_supabase/newregister/form04test.html" class="btn btn-secondary"> ▪︎
+            <a href="https://www.hofkrisda.com/HOF_supabase/newregister/form04_txtarea_c1.html" class="btn btn-secondary"> ▪︎
                 ปรึกษาผู้เชี่ยวชาญ Darin</a>
-            <a href="https://www.w3schools.com/" target="_blank" class="btn btn-secondary">ทดสอบ 1</a>
+            <button onclick="openAndClose('https://www.w3schools.com/')" class="btn btn-secondary">ทดสอบ 2</button>
 
             <!--- <a href="?refer=a13" class="btn btn-info">คอนเทนต์ที่แนะนำในการส่งดันคลิป</a>
         <a href="?refer=a14" class="btn btn-primary">วิธีเติมเหรียญ TikTok ทำไงน้อ..</a> 
@@ -211,6 +211,14 @@
 
         function sendLiffMessage(text) {
             return liff.sendMessages([{ type: "text", text }]).then(() => liff.closeWindow());
+        }
+
+        function openAndClose(url) {
+            liff.openWindow({
+                url: url,
+                external: true
+            });
+            liff.closeWindow();
         }
 
         async function handleRefer(refer) {
