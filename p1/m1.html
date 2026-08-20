@@ -26,7 +26,8 @@
         }
 
         .btn-list a,
-        .btn-list .btn-toggle {
+        .btn-list .btn-toggle,
+        .btn-list button {
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             text-align: left;
         }
@@ -163,13 +164,11 @@
             </div>
             <a href="https://www.hofkrisda.com/HOF_supabase/newregister/form04test.html" class="btn btn-secondary"> ▪︎
                 ปรึกษาผู้เชี่ยวชาญ Darin</a>
-            <button onclick="openAndClose('https://www.w3schools.com/')" class="btn btn-secondary">ทดสอบ 3</button>
+            <button onclick="openAndClose('https://www.w3schools.com/')" class="btn btn-secondary"> ▪︎ ทดสอบปุ่มที่
+                1</button>
+            <button onclick="openAndClose('https://liff.line.me/1657007036-ZEXSRlB9')" class="btn btn-info"> ▪︎
+                แบบฟอร์มที่ 2</button>
 
-            <!--- <a href="?refer=a13" class="btn btn-info">คอนเทนต์ที่แนะนำในการส่งดันคลิป</a>
-        <a href="?refer=a14" class="btn btn-primary">วิธีเติมเหรียญ TikTok ทำไงน้อ..</a> 
-        <a href="?refer=a15" class="btn btn-info">ดูกิจกรรม TikTok ดูได้จากตรงไหน</a>
-        <a href="?refer=a16" class="btn btn-primary">การ์ด P K มีอะไรบ้าง อยากรู้จัง</a>
-        <a href="?refer=a17" class="btn btn-info">สมัคร VJ กับ Blue Zone ซิคะ</a> -->
         </section>
     </main>
 
@@ -224,7 +223,7 @@
                     });
                     setTimeout(() => {
                         liff.closeWindow();
-                    }, 1500);
+                    }, 1000);
                 } else {
                     // อยู่บน PC browser: เปิดแท็บใหม่
                     window.open(url, '_blank');
